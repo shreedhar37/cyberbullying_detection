@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+
+<div class='container'>
+    <br>
+    <p class='mt-3'>Your account details are below:</p>
+    <br>
+    <table class='table table-bordered table-sm'>
+        <thead>
+            <tr>
+                <th scope="col">Username</th>
+                <th scope="col">Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ account['username'] }}</td>
+                <td>{{ account['email'] }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}
