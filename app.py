@@ -47,6 +47,53 @@ mysql = MySQL(app)
 # http://localhost:5000/ - this will be the login page, we need to use both GET and POST requests
 
 
+
+# Model building
+train = pd.read_csv(
+        "D:\\Programming\\BE PROJECT\\bullying_dataset.csv", error_bad_lines=False
+    )
+train.drop_duplicates(keep=False, inplace=True)
+
+
+# test = pd.read_csv("bullying_dataset.csv")
+
+# split training and testing data
+X_train, X_test, y_train, y_test = train_test_split(
+        train.tweet, train.label, test_size=0.20
+)
+cv = CountVectorizer(lowercase=False)
+features = cv.fit_transform(X_train)
+    # build a model
+
+tunned_parameters = {
+        "kernel": ["linear", "rbf"],
+        "gamma": [1e-3, 1e-4],
+        "C": [1, 10, 100, 1000],
+    }
+
+svm_model = GridSearchCV(svm.SVC(), tunned_parameters)
+
+svm_model.fit(features, y_train)
+
+features_test = cv.transform(X_test)
+svm_model_score = svm_model.score(features_test, y_test)
+X_train, X_test, y_train, y_test = train_test_split(
+        train.tweet, train.label, test_size=0.20
+    )
+v = CountVectorizer(lowercase=False)
+X_train_count = v.fit_transform(X_train.values)
+X_train_count.toarray()[:3]
+naive_bayes_model = MultinomialNB()
+naive_bayes_model.fit(X_train_count, y_train)
+X_test_count = v.transform(X_test)
+naive_bayes_model_score = naive_bayes_model.score(X_test_count, y_test)
+
+
+if naive_bayes_model_score > svm_model_score:
+    model = naive_bayes_model
+else:
+    model = svm_model
+
 @app.route("/", methods=["GET", "POST"])
 def login():
     # Output message if something goes wrong...
@@ -187,13 +234,13 @@ def my_form_post():
     # test = pd.read_csv("bullying_dataset.csv")
 
     c = twint.Config()
-
     c.Search = topic
     c.Lang = "en"
     c.Limit = 5  # number of Tweets to scrape
     c.Store_csv = True  # store tweets in a csv file
     c.Output = os.getcwd() + topic + ".csv"  # path to csv file
     asyncio.set_event_loop(asyncio.new_event_loop())
+    
     twint.run.Search(c)
     test = pd.read_csv(
         os.getcwd() + topic + ".csv", error_bad_lines=False
@@ -229,44 +276,9 @@ def my_form_post():
         if not (i == "" or i == " "):
             cleaned_corpus.append(i)
 
-    # split training and testing data
-    X_train, X_test, y_train, y_test = train_test_split(
-        train.tweet, train.label, test_size=0.20
-    )
-    cv = CountVectorizer(lowercase=False)
-    features = cv.fit_transform(X_train)
-    # build a model
-
-    tunned_parameters = {
-        "kernel": ["linear", "rbf"],
-        "gamma": [1e-3, 1e-4],
-        "C": [1, 10, 100, 1000],
-    }
-
-    svm_model = GridSearchCV(svm.SVC(), tunned_parameters)
-
-    svm_model.fit(features, y_train)
-
-    features_test = cv.transform(X_test)
-    svm_model_score = svm_model.score(features_test, y_test)
-    X_train, X_test, y_train, y_test = train_test_split(
-        train.tweet, train.label, test_size=0.20
-    )
-    v = CountVectorizer(lowercase=False)
-    X_train_count = v.fit_transform(X_train.values)
-    X_train_count.toarray()[:3]
-    naive_bayes_model = MultinomialNB()
-    naive_bayes_model.fit(X_train_count, y_train)
-    X_test_count = v.transform(X_test)
-    naive_bayes_model_score = naive_bayes_model.score(X_test_count, y_test)
     tweets = cleaned_corpus[:5]
 
     tweets_count = cv.transform(tweets)
-
-    if naive_bayes_model_score > svm_model_score:
-        model = naive_bayes_model
-    else:
-        model = svm_model
 
     return render_template(
         "home.html", Test=test, Tweets=tweets, Tweets_count=tweets_count, Model=model
