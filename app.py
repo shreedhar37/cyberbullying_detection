@@ -4,6 +4,7 @@ from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
 import pandas as pd
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import svm
@@ -20,13 +21,27 @@ import pytesseract
 import cv2 as CV
 from werkzeug.utils import secure_filename
 from PIL import Image
+import preprocessor as p
+from langdetect import detect 
 
+from flask_mail import Mail, Message
 # tesseract config
 pytesseract.pytesseract.tesseract_cmd = "C:/Program Files (x86)/tesseract.exe"
 tessdata_dir_config = '--tessdata-dir "C:/Program Files (x86)/tessdata"'
 
 
 app = Flask(__name__)
+mail_settings = {
+    "MAIL_SERVER": 'smtp.gmail.com',
+    "MAIL_PORT": 465,
+    "MAIL_USE_TLS": False,
+    "MAIL_USE_SSL": True,
+    "MAIL_USERNAME": 'your email goes here',
+    "MAIL_PASSWORD": 'your password goes here'
+}
+
+app.config.update(mail_settings)
+mail = Mail(app)
 
 # Change this to your secret key (can be anything, it's for extra protection)
 app.secret_key = "your secret key"
@@ -129,7 +144,7 @@ def login():
     return render_template("index.html", msg=msg)
 
 
-# http://localhost:5000/python/logout - this will be the logout page
+# http://localhost:5000/logout - this will be the logout page
 
 
 @app.route("/logout")
@@ -142,9 +157,9 @@ def logout():
     return redirect(url_for("login"))
 
 
-# http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
+# http://localhost:5000/register - this will be the registration page, we need to use both GET and POST requests
 
-# http://localhost:5000/pythinlogin/register - this will be the registration page, we need to use both GET and POST requests
+# http://localhost:5000/register - this will be the registration page, we need to use both GET and POST requests
 @app.route("/register", methods=["GET", "POST"])
 def register():
     # Output message if something goes wrong...
@@ -202,7 +217,7 @@ def home():
     return redirect(url_for("login"))
 
 
-# http://localhost:5000/pythinlogin/profile - this will be the profile page, only accessible for loggedin users
+# http://localhost:5000/profile - this will be the profile page, only accessible for loggedin users
 @app.route("/profile")
 def profile():
     # Check if user is loggedin
@@ -222,66 +237,74 @@ def my_form():
     return render_template("home.html")
 
 
+
 @app.route("/home", methods=["POST"])
 def my_form_post():
-
+    
     train = pd.read_csv(
         "D:\\Programming\\BE PROJECT\\bullying_dataset.csv", error_bad_lines=False
     )
     train.drop_duplicates(keep=False, inplace=True)
 
+    
     topic = request.form["text"]
-    # test = pd.read_csv("bullying_dataset.csv")
+    
 
     c = twint.Config()
-    c.Search = topic
     c.Lang = "en"
-    c.Limit = 5  # number of Tweets to scrape
+
+    c.Min_likes = 25
+
+    c.Limit = 5
+
+    c.Near = "India"
+
     c.Store_csv = True  # store tweets in a csv file
+    
     c.Output = os.getcwd() + topic + ".csv"  # path to csv file
+    
     asyncio.set_event_loop(asyncio.new_event_loop())
     
     twint.run.Search(c)
+    
     test = pd.read_csv(
         os.getcwd() + topic + ".csv", error_bad_lines=False
     )
-    # test.drop_duplicates(keep=False, inplace=True)
 
-    cleaned_data = []
-    for i in range(len(test)):
-        tweet = test["tweet"][i]
+    # preprocessing and removing  non english tweets
+    def preprocess(input_txt):
+    
         try:
-            if detect(tweet) == "en" and (len(p.clean(tweet)) > 3):
-                cleaned_data.append(p.clean(tweet))
+        
+            if detect(input_txt) == 'en' and (len(p.clean(input_txt)) > 3):
+            
+                return p.clean(input_txt)
+
         except:
             pass
 
-    wordnet = WordNetLemmatizer()
-    corpus = []
+    # clean the tweets and remove non-english tweets
 
-    for i in range(len(cleaned_data)):
-        review = re.sub("[^a-zA-Z]", " ", cleaned_data[i])
-        review = review.lower()
-        review = review.split()
-        review = [
-            wordnet.lemmatize(word)
-            for word in review
-            if not word in set(stopwords.words("english"))
-        ]
-        review = " ".join(review)
-        corpus.append(review)
+    test['tweet'] = np.vectorize(preprocess)(test['tweet'])
 
-    cleaned_corpus = []
-    for i in corpus:
-        if not (i == "" or i == " "):
-            cleaned_corpus.append(i)
+    # remove duplicates
 
-    tweets = cleaned_corpus[:5]
+    test.drop_duplicates( )
 
+    # remove None values
+
+    index = test[test['tweet'] == "None"].index
+
+    test.drop(index, inplace = True)
+
+
+    test['tweet'] = test['tweet'].head().apply(str)
+
+    tweets = test['tweet'].head()
     tweets_count = cv.transform(tweets)
 
     return render_template(
-        "home.html", Test=test, Tweets=tweets, Tweets_count=tweets_count, Model=model
+        "home.html", topic = topic, Test=test, Tweets=tweets, Tweets_count=tweets_count, Model=model
     )
 
 
@@ -307,9 +330,41 @@ def image():
     return render_template("image.html")
 
 
-@app.route('/report')
-def report():
-    return render_template('report.html')
+@app.route('/send_report', methods = ['GET','POST'])
+def send_report():
+    topic = request.form['topic']
+    index = int(request.form['i'])
+    test = pd.read_csv(
+        os.getcwd() + topic + ".csv", error_bad_lines=False
+    )
+    tweet_id = test['id'][index]
+    tweet_username = test['username'][index]
+    tweet_owner = test['name'][index]
+    tweet = test['tweet'][index]
+    return render_template('send_report.html', tweet_id = tweet_id, tweet_username = tweet_username, tweet_owner= tweet_owner, tweet = tweet)
+
+
+
+
+@app.route('/success', methods = ['GET','POST'])
+def success():
+    try:
+        with app.app_context():
+            msg = Message(
+                subject= request.form['subject'],
+                sender=app.config.get("MAIL_USERNAME"),
+                recipients=[request.form['email']],
+                body= request.form['msg'])
+            
+        mail.send(msg)
+        return render_template('success.html')
+
+    except Exception as e:
+        print(e)
+        return render_template('success.html', error = e)
+
+    
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port = 5000)
