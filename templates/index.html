@@ -5,7 +5,7 @@
 
 {% block content %}
 
-    <div class="indexlogin container">
+<!-- <div class="indexlogin container">
     <form action="{{ url_for('login') }}" method="post">
         <div class="mt-3">
             <label for="username" class="form-label">Username:</label>
@@ -20,6 +20,28 @@
     
     </form>
     
+    </div> -->
+
+<div class="container">
+    <div class='mt-3 mb-3'>
+
+        <form action="{{ url_for('login') }}" method="post">
+            {% if msg %}
+            <div class="alert alert-success" role="alert"> {{ msg }} </div><br><br>
+
+            {% endif %}
+            <label for="EMAIL" class="form-label">Email :</label>
+            <input id="EMAIL" name="EMAIL" type="email" placeholder="stevejobs@gmail.com" class="form-control"
+                required /><br>
+
+            <label for="PASSWORD" class="form-label">Password :</label>
+            <input id="PASSWORD" name="PASSWORD" type="password" placeholder="********" class="form-control"
+                required /><br>
+            <button type="submit" class="mt-2 btn btn-primary">Login</button><br><br>
+        </form>
+        </h2>
+        <h6>Dont't have an account? <a class="bottom" href="{{url_for('register')}}"> Sign Up here</a> </h6>
     </div>
+</div>
 
 {% endblock %}

@@ -6,19 +6,22 @@
 
 
 <div class="container">
+    <br>
+    <br>
+    <div class="alert alert-success" role="alert"> Hello {{ session['NAME'] }} </div><br>
 
     <form action="{{ url_for('home') }}" method="POST">
 
         <div class="mt-3">
-            <label for="text" class="form-label">Enter the topic you want to search : </label>
-            <input type="text" class="form-control" id="text" name="text" placeholder="nigga" required>
+            <label for="text" class="form-label">Enter the name of the person : </label><br><br>
+            <input type="text" class="form-control" id="text" name="text" placeholder="Salman Khan" required><br>
         </div>
-        <button type="submit" class="mt-3 btn btn-primary">Submit</button>
+        <button type="submit" class="mt-3 btn btn-primary">Search and show the results</button>
 
     </form>
 
 
-    {% if request.method == "POST" %}
+    {% if request.method == "POST" and result %}
 
     <br>
     <h3>Results</h3>
@@ -33,25 +36,39 @@
             </tr>
         </thead>
         <tbody>
-            <p>{% for i in range(Tweets|length) %}
+            <p>{% for i in range(result|length) %}
                 <tr>
-                    <th scope="row">{{i}}</th>
+                    <td scope="row">{{i + 1}}</td>
                     <td>{{Tweets[i]}}</td>
                     <td>
-                        {% if Model.predict(Tweets_count[i] == 1) %}
-                        Bullying
+                        {% if result[i] == 'none' %}
+
+                        Non Bullying Tweet
+
+                        {% elif result[i] == 'racism' %}
+
+                        Racism Tweet
+
+                        {% elif result[i] == 'sexism' %}
+
+                        Sexism Tweet
 
                         {% else %}
-                        Non-Bullying
+
+                        Other hate speech tweet
 
                         {% endif %}
+
                     </td>
+
                     <td>
-                        {% if Model.predict(Tweets_count[i] == 1) %}
+                        {% if ( result[i] == 'racism'  or  result[i] == 'sexism'   or  result[i] == 'other' ) %}
+
                         <form action="{{ url_for('send_report') }}" method='POST'>
-                            <input type="hidden" id="topic" name="topic" value="{{topic}}">
+                            <input type="hidden" id="twitter_name" name="twitter_name" value="{{twitter_name}}">
                             <input type="hidden" id="i" name="i" value="{{i}}">
                             <input type="submit" class="btn btn-danger" value='Report'>
+
                         </form>
 
                         {% endif %}
@@ -68,8 +85,7 @@
 
     <br><br>
 
-    <p class="mt-3">Detect bullying in text based images:</p>
-    <a class="mt-3" href="{{ url_for('image')}}"><button>Upload Image</button></a>
+   
 
 </div>
 

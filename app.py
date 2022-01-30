@@ -1,33 +1,50 @@
 import asyncio
+import hashlib
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
-import re
 import pandas as pd
 import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn import svm
-from sklearn.model_selection import GridSearchCV
-import preprocessor as p
-from langdetect import detect
-import twint
-from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+import seaborn as sns
 import re
+import nltk
+import twint
 from nltk.corpus import stopwords
+#nltk.download('stopwords')
+from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
+#nltk.download('wordnet')
+from nltk.tokenize import word_tokenize
+from nltk.tokenize import sent_tokenize
+#nltk.download('punkt')
+from wordcloud import WordCloud
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import make_scorer, roc_curve, roc_auc_score
+from sklearn.metrics import precision_recall_fscore_support as score
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC, LinearSVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB,MultinomialNB,BernoulliNB
+from sklearn.feature_extraction.text import CountVectorizer
 import os
-import pytesseract
-import cv2 as CV
+# from PIL import Image
+# import easyocr
 from werkzeug.utils import secure_filename
-from PIL import Image
+# import torchvision
 import preprocessor as p
 from langdetect import detect 
-
 from flask_mail import Mail, Message
-# tesseract config
-pytesseract.pytesseract.tesseract_cmd = "C:/Program Files (x86)/tesseract.exe"
-tessdata_dir_config = '--tessdata-dir "C:/Program Files (x86)/tessdata"'
+import datetime as dt
 
 
 app = Flask(__name__)
@@ -36,8 +53,8 @@ mail_settings = {
     "MAIL_PORT": 465,
     "MAIL_USE_TLS": False,
     "MAIL_USE_SSL": True,
-    "MAIL_USERNAME": 'your email goes here',
-    "MAIL_PASSWORD": 'your password goes here'
+    "MAIL_USERNAME": '',
+    "MAIL_PASSWORD": ''
 }
 
 app.config.update(mail_settings)
@@ -52,109 +69,195 @@ app.config["UPLOAD_FOLDER"] = "/flask"
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 # Enter your database connection details below
-app.config["MYSQL_HOST"] = "localhost"
-app.config["MYSQL_USER"] = "root"
-app.config["MYSQL_PASSWORD"] = ""
-app.config["MYSQL_DB"] = "pythonlogin"
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''
+app.config['MYSQL_DB'] = ''
+
 
 # Intialize MySQL
 mysql = MySQL(app)
+
 # http://localhost:5000/ - this will be the login page, we need to use both GET and POST requests
 
 
 
 # Model building
-train = pd.read_csv(
-        "D:\\Programming\\BE PROJECT\\bullying_dataset.csv", error_bad_lines=False
-    )
-train.drop_duplicates(keep=False, inplace=True)
+# dataset = pd.read_csv("D:\Programming\BE PROJECT\datasets\\bullying_dataset.csv")
 
 
-# test = pd.read_csv("bullying_dataset.csv")
+# # data preprocessing 
 
-# split training and testing data
-X_train, X_test, y_train, y_test = train_test_split(
-        train.tweet, train.label, test_size=0.20
-)
-cv = CountVectorizer(lowercase=False)
-features = cv.fit_transform(X_train)
-    # build a model
+# def convert_lower(text):
+#     return text.lower()
 
-tunned_parameters = {
-        "kernel": ["linear", "rbf"],
-        "gamma": [1e-3, 1e-4],
-        "C": [1, 10, 100, 1000],
-    }
-
-svm_model = GridSearchCV(svm.SVC(), tunned_parameters)
-
-svm_model.fit(features, y_train)
-
-features_test = cv.transform(X_test)
-svm_model_score = svm_model.score(features_test, y_test)
-X_train, X_test, y_train, y_test = train_test_split(
-        train.tweet, train.label, test_size=0.20
-    )
-v = CountVectorizer(lowercase=False)
-X_train_count = v.fit_transform(X_train.values)
-X_train_count.toarray()[:3]
-naive_bayes_model = MultinomialNB()
-naive_bayes_model.fit(X_train_count, y_train)
-X_test_count = v.transform(X_test)
-naive_bayes_model_score = naive_bayes_model.score(X_test_count, y_test)
+# dataset['tweet'] = dataset['tweet'].apply(convert_lower)
 
 
-if naive_bayes_model_score > svm_model_score:
-    model = naive_bayes_model
-else:
-    model = svm_model
+# def remove_stopwords(text):
+#     stop_words = set(stopwords.words('english'))
+#     words = word_tokenize(text)
+#     return [x for x in words if x not in stop_words]
+
+# dataset['tweet'] = dataset['tweet'].apply(remove_stopwords)
+
+# def lemmatize_word(text):
+#     wordnet = WordNetLemmatizer()
+#     return " ".join([wordnet.lemmatize(word) for word in text])
+
+# dataset['tweet'] = dataset['tweet'].apply(lemmatize_word)
+
+# x = dataset['tweet']
+# y = dataset['category']
+
+# from sklearn.feature_extraction.text import CountVectorizer
+# x = np.array(dataset.iloc[:,0].values)
+# y = np.array(dataset.category.values)
+# cv = CountVectorizer(max_features = 5000)
+# x = cv.fit_transform(dataset.tweet).toarray()
+
+# from sklearn.model_selection import train_test_split
+# x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, random_state = 0, shuffle = True)
+
+# #create list of model and accuracy dicts
+# perform_list = [ ]
+
+# def run_model(model_name, est_c, est_pnlty):
+    
+#     mdl= ""
+
+
+#     if model_name == 'Random Forest':
+
+#         mdl = RandomForestClassifier(n_estimators=100 ,criterion='entropy' , random_state=0)
+
+#     elif model_name == 'Multinomial Naive Bayes':
+
+#         mdl = MultinomialNB(alpha=1.0,fit_prior=True)
+
+#     elif model_name == 'Support Vector Classifer':
+
+#         mdl = SVC()
+
+#     elif model_name == 'Decision Tree Classifier':
+
+#         mdl = DecisionTreeClassifier()
+
+#     elif model_name == 'K Nearest Neighbour':
+
+#         mdl = KNeighborsClassifier(n_neighbors=10 , metric= 'minkowski' , p = 4)
+    
+#     elif model_name == 'BernoulliNB' :
+        
+#         mdl = BernoulliNB()
+
+    
+
+#     oneVsRest = OneVsRestClassifier(mdl)
+
+#     oneVsRest.fit(x_train, y_train)
+
+#     y_pred = oneVsRest.predict(x_test)
+
+#     # Performance metrics
+
+#     accuracy = round(accuracy_score(y_test, y_pred) * 100, 2)
+
+#     # Get precision, recall, f1 scores
+
+#     precision, recall, f1score, support = score(y_test, y_pred, average='micro')
+
+#     print(f'Test Accuracy Score of Basic {model_name}: {accuracy} %')
+
+#     print(f'Precision : {precision}')
+
+#     print(f'Recall : {recall}')
+
+#     print(f'F1-score : {f1score}')
+
+#     # Add performance parameters to list
+
+#     perform_list.append(dict([
+
+#     ('Model', model_name),
+
+#     ('Test Accuracy', round(accuracy, 2)),
+
+#     ('Precision', round(precision, 2)),
+
+#     ('Recall', round(recall, 2)),
+
+#     ('F1', round(f1score, 2))
+
+#     ]))
+
+# # run_model('BernoulliNB', est_c=None, est_pnlty=None)
+
+# # run_model('Multinomial Naive Bayes', est_c=None, est_pnlty=None)
+
+# # run_model('Support Vector Classifer', est_c=None, est_pnlty=None)
+# #run_model('K Nearest Neighbour', est_c=None, est_pnlty=None)
+
+# # run_model('Decision Tree Classifier', est_c=None, est_pnlty=None)
+
+# run_model('Random Forest', est_c=None, est_pnlty=None)
+
+# model_performance = pd.DataFrame(data=perform_list)
+# model_performance = model_performance[['Model', 'Test Accuracy', 'Precision', 'Recall', 'F1']]
+# model_performance
+# model = model_performance["Model"]
+# max_value = model_performance["Test Accuracy"].max()
+# print("The best accuracy of model is", max_value, "%")
+
+# classifier = RandomForestClassifier(n_estimators=100 ,criterion='entropy' , random_state=0).fit(x_train, y_train)
+# y_pred1 = cv.transform(['nigga got no chill', 'wassup bitches'])
+
 
 @app.route("/", methods=["GET", "POST"])
+
 def login():
-    # Output message if something goes wrong...
-    msg = ""
-    # Check if "username" and "password" POST requests exist (user submitted form)
-    if (
-        request.method == "POST"
-        and "username" in request.form
-        and "password" in request.form
-    ):
-        # Create variables for easy access
-        username = request.form["username"]
-        password = request.form["password"]
+    msg = ''
+    if request.method == 'POST' and 'EMAIL' in request.form and 'PASSWORD' in request.form:
+        EMAIL = request.form['EMAIL']
+        PASSWORD = request.form['PASSWORD']
+        PASSWORD = hashlib.md5(PASSWORD.encode())
+        PASSWORD = PASSWORD.hexdigest()
+        print(PASSWORD)
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute(
-            "SELECT * FROM accounts WHERE username = %s AND password = %s",
-            (
-                username,
-                password,
-            ),
-        )
+        query = 'SELECT * FROM USER WHERE EMAIL = % s AND PASSWORD = % s'
+        cursor.execute(query, (EMAIL, PASSWORD,))
         account = cursor.fetchone()
         if account:
-            # Create session data, we can access this data in other routes
-            session["loggedin"] = True
-            session["id"] = account["id"]
-            session["username"] = account["username"]
-            # Redirect to home page
-            return redirect(url_for("home"))
+            session['loggedin'] = True
+            session['UID'] = account['UID']
+            session['NAME'] = account['NAME']
+            LOGIN_COUNT = account['LOGIN_COUNT'] + 1
+            LAST_LOGIN = dt.datetime.now()
+
+            query = 'UPDATE USER SET LOGIN_COUNT = % s, LAST_LOGIN = % s WHERE UID = % s'
+
+            cursor.execute(query, (LOGIN_COUNT, LAST_LOGIN, account['UID'],))
+
+            mysql.connection.commit()
+            
+            return render_template('home.html')
         else:
-            # Account doesnt exist or username/password incorrect
-            msg = "Incorrect username/password!"
-    return render_template("index.html", msg=msg)
+            msg = 'Incorrect username / password !'
+
+    return render_template('index.html', msg=msg)
 
 
 # http://localhost:5000/logout - this will be the logout page
 
 
-@app.route("/logout")
+
+@app.route('/logout')
 def logout():
-    # Remove session data, this will log the user out
-    session.pop("loggedin", None)
-    session.pop("id", None)
-    session.pop("username", None)
-    # Redirect to login page
-    return redirect(url_for("login"))
+    session.pop('loggedin', None)
+    session.pop('UID', None)
+    session.pop('NAME', None)
+    return redirect(url_for('login'))
+
 
 
 # http://localhost:5000/register - this will be the registration page, we need to use both GET and POST requests
@@ -162,49 +265,39 @@ def logout():
 # http://localhost:5000/register - this will be the registration page, we need to use both GET and POST requests
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    # Output message if something goes wrong...
-    msg = ""
-    # Check if "username", "password" and "email" POST requests exist (user submitted form)
-    if (
-        request.method == "POST"
-        and "username" in request.form
-        and "password" in request.form
-        and "email" in request.form
-    ):
-        # Create variables for easy access
-        username = request.form["username"]
-        password = request.form["password"]
-        email = request.form["email"]
+    msg = ''
+    if request.method == 'POST' and 'NAME' in request.form and 'EMAIL' in request.form and 'PASSWORD' in request.form and 'CPASSWORD' in request.form:
+        NAME = request.form['NAME']
+        EMAIL = request.form['EMAIL']
+        PASSWORD = request.form['PASSWORD']
+        CPASSWORD = request.form['CPASSWORD']
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT * FROM accounts WHERE username = %s", (username,))
+        query = 'SELECT EMAIL FROM USER WHERE EMAIL = % s'
+        cursor.execute(query, (EMAIL, ))
         account = cursor.fetchone()
-        # If account exists show error and validation checks
         if account:
-            msg = "Account already exists!"
-        elif not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            msg = "Invalid email address!"
-        elif not re.match(r"[A-Za-z0-9]+", username):
-            msg = "Username must contain only characters and numbers!"
-        elif not username or not password or not email:
-            msg = "Please fill out the form!"
-        else:
-            # Account doesnt exists and the form data is valid, now insert new account into accounts table
-            cursor.execute(
-                "INSERT INTO accounts VALUES (NULL, %s, %s, %s)",
-                (
-                    username,
-                    password,
-                    email,
-                ),
-            )
-            mysql.connection.commit()
-            msg = "You have successfully registered!"
-    elif request.method == "POST":
-        # Form is empty... (no POST data)
-        msg = "Please fill out the form!"
-    # Show registration form with message (if any)
-    return render_template("register.html", msg=msg)
+            msg = 'Account already exists !'
+        elif not re.match(r'[^@]+@[^@]+\.[^@]+', EMAIL):
+            msg = 'Invalid email address !'
 
+        elif not NAME or not EMAIL or not PASSWORD or not CPASSWORD:
+            msg = 'Please fill out the form !'
+        elif PASSWORD != CPASSWORD:
+            msg = "Confirm Password doesn't match with password !!"
+
+        else:
+            PASSWORD = hashlib.md5(PASSWORD.encode())
+            PASSWORD = PASSWORD.hexdigest()
+            query = 'INSERT INTO USER(NAME, EMAIL, PASSWORD) VALUES(%s, %s, %s)'
+            cursor.execute(query, (NAME, EMAIL, PASSWORD,))
+            mysql.connection.commit()
+            msg = 'You have successfully registered ! Please Login with your credentials'
+            return render_template('index.html', msg=msg)
+
+    elif request.method == 'POST':
+        msg = 'Please fill out the form ! '
+
+    return render_template('register.html', msg= msg)
 
 # http://localhost:5000/home - this will be the home page, only accessible for loggedin users
 @app.route("/home")
@@ -212,7 +305,7 @@ def home():
     # Check if user is loggedin
     if "loggedin" in session:
         # User is loggedin show them the home page
-        return render_template("home.html", username=session["username"])
+        return render_template("home.html", username=session['NAME'])
     # User is not loggedin redirect to login page
     return redirect(url_for("login"))
 
@@ -224,7 +317,9 @@ def profile():
     if "loggedin" in session:
         # We need all the account info for the user so we can display it on the profile page
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT * FROM accounts WHERE id = %s", (session["id"],))
+        
+        query  = 'SELECT * FROM USER WHERE UID = % s'
+        cursor.execute(query, (session['UID'],))
         account = cursor.fetchone()
         # Show the profile page with account info
         return render_template("profile.html", account=account)
@@ -237,106 +332,123 @@ def my_form():
     return render_template("home.html")
 
 
-
 @app.route("/home", methods=["POST"])
 def my_form_post():
-    
-    train = pd.read_csv(
-        "D:\\Programming\\BE PROJECT\\bullying_dataset.csv", error_bad_lines=False
-    )
-    train.drop_duplicates(keep=False, inplace=True)
+    # train = pd.read_csv(
+    #     "D:\Programming\BE PROJECT\datasets\\bullying_dataset.csv", error_bad_lines=False
+    # )
+    # train.drop_duplicates(keep=False, inplace=True)
 
     
-    topic = request.form["text"]
+    # twitter_name = str(request.form["text"])
+
+
+    # c = twint.Config()
     
-
-    c = twint.Config()
-    c.Lang = "en"
-
-    c.Min_likes = 25
-
-    c.Limit = 5
-
-    c.Near = "India"
-
-    c.Store_csv = True  # store tweets in a csv file
+    # c.Search = twitter_name.split(" ")
     
-    c.Output = os.getcwd() + topic + ".csv"  # path to csv file
+    # c.Lang = "en"
+
+    # c.Min_likes = 100
+
+    # c.Limit = 500
+
+    # c.Near = "India"
+
+    # c.Store_csv = True  # store tweets in a csv file
     
-    asyncio.set_event_loop(asyncio.new_event_loop())
+    # c.Output = os.getcwd() + twitter_name + ".csv"  # path to csv file
     
-    twint.run.Search(c)
+    # asyncio.set_event_loop(asyncio.new_event_loop())
     
-    test = pd.read_csv(
-        os.getcwd() + topic + ".csv", error_bad_lines=False
-    )
-
-    # preprocessing and removing  non english tweets
-    def preprocess(input_txt):
+    # twint.run.Search(c)
     
-        try:
-        
-            if detect(input_txt) == 'en' and (len(p.clean(input_txt)) > 3):
-            
-                return p.clean(input_txt)
+    # test = pd.read_csv(
+    #     os.getcwd() + twitter_name + ".csv", error_bad_lines=False
+    # )
 
-        except:
-            pass
+    
+    # data preprocessing
+    # test['tweet'] = test['tweet'].apply(convert_lower)
+    
+    # test['tweet'] = test['tweet'].apply(remove_stopwords)
 
-    # clean the tweets and remove non-english tweets
+    # test['tweet'] = test['tweet'].apply(lemmatize_word)
 
-    test['tweet'] = np.vectorize(preprocess)(test['tweet'])
+    
+    # tweets = test['tweet'].head().values
 
-    # remove duplicates
+    # prediction = cv.transform(tweets)
 
-    test.drop_duplicates( )
+    # prediction = classifier.predict(prediction)
+    
+    # print(prediction)
 
-    # remove None values
+    # result = []
+    
+    # for i in prediction : 
 
-    index = test[test['tweet'] == "None"].index
+    #     result.append(i)
 
-    test.drop(index, inplace = True)
-
-
-    test['tweet'] = test['tweet'].head().apply(str)
-
-    tweets = test['tweet'].head()
-    tweets_count = cv.transform(tweets)
-
-    return render_template(
-        "home.html", topic = topic, Test=test, Tweets=tweets, Tweets_count=tweets_count, Model=model
-    )
+    # print(result)
+    return render_template('home.html')
+    # return render_template(
+    #     "home.html",
+        # twitter_name = twitter_name,
+        # Tweets = tweets,
+        # result = result
+    # )
 
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
+        
         # Get the file from post request
         f = request.files["file"]
 
         # Save the file to ./uploads
+        
         basepath = os.getcwd()
+        
         file_path = os.path.join(basepath, "uploads", secure_filename(f.filename))
         f.save(file_path)
-        img = CV.imread(file_path)
+       
+        # reader = easyocr.Reader(['en'], gpu = False)
+        # img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
+        
+        
+        
+        text = " "
+        
+        # text = text.join(img_txt)
 
-        d = pytesseract.image_to_string(img, config=tessdata_dir_config)
+        # text_transformed = cv.transform([text])
+        
+        # result = classifier.predict(text_transformed)
 
-        return render_template("image.html", op=d)
+        # return render_template("image.html", Text = text, result = result)
 
 
 @app.route("/image")
 def image():
-    return render_template("image.html")
+     # Check if user is loggedin
+    if "loggedin" in session:
+        # User is loggedin show them the home page
+        return render_template("image.html")
+    # User is not loggedin redirect to login page
+    return redirect(url_for("login"))
 
 
 @app.route('/send_report', methods = ['GET','POST'])
 def send_report():
-    topic = request.form['topic']
+    twitter_name = request.form['twitter_name']
     index = int(request.form['i'])
     test = pd.read_csv(
-        os.getcwd() + topic + ".csv", error_bad_lines=False
-    )
+         os.getcwd() + twitter_name + ".csv", error_bad_lines=False
+     )
+    # test = pd.read_csv("D:\Programming\BE PROJECT\scraped_tweets\slut.csv")
+
     tweet_id = test['id'][index]
     tweet_username = test['username'][index]
     tweet_owner = test['name'][index]
