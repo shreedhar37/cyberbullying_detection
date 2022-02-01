@@ -11,13 +11,13 @@ import re
 import nltk
 import twint
 from nltk.corpus import stopwords
-#nltk.download('stopwords')
+# nltk.download('stopwords')
 from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
-#nltk.download('wordnet')
+# nltk.download('wordnet')
 from nltk.tokenize import word_tokenize
 from nltk.tokenize import sent_tokenize
-#nltk.download('punkt')
+# nltk.download('punkt')
 from wordcloud import WordCloud
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -34,7 +34,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB,MultinomialNB,BernoulliNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.feature_extraction.text import CountVectorizer
 import os
 # from PIL import Image
@@ -42,7 +42,7 @@ import os
 from werkzeug.utils import secure_filename
 # import torchvision
 import preprocessor as p
-from langdetect import detect 
+from langdetect import detect
 from flask_mail import Mail, Message
 import datetime as dt
 
@@ -72,7 +72,7 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = ''
-app.config['MYSQL_DB'] = ''
+app.config['MYSQL_DB'] = 'project'
 
 
 # Intialize MySQL
@@ -81,12 +81,12 @@ mysql = MySQL(app)
 # http://localhost:5000/ - this will be the login page, we need to use both GET and POST requests
 
 
-
 # Model building
-# dataset = pd.read_csv("D:\Programming\BE PROJECT\datasets\\bullying_dataset.csv")
+dataset = pd.read_csv(
+    "D:\Programming\BE PROJECT\datasets\\bullying_dataset.csv")
 
 
-# # data preprocessing 
+# # data preprocessing
 
 # def convert_lower(text):
 #     return text.lower()
@@ -107,114 +107,114 @@ mysql = MySQL(app)
 
 # dataset['tweet'] = dataset['tweet'].apply(lemmatize_word)
 
-# x = dataset['tweet']
-# y = dataset['category']
+x = dataset['tweet']
+y = dataset['category']
 
-# from sklearn.feature_extraction.text import CountVectorizer
-# x = np.array(dataset.iloc[:,0].values)
-# y = np.array(dataset.category.values)
-# cv = CountVectorizer(max_features = 5000)
-# x = cv.fit_transform(dataset.tweet).toarray()
+x = np.array(dataset.iloc[:, 0].values)
+y = np.array(dataset.category.values)
+cv = CountVectorizer(max_features=5000)
+x = cv.fit_transform(dataset.tweet).toarray()
 
-# from sklearn.model_selection import train_test_split
-# x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, random_state = 0, shuffle = True)
+x_train, x_test, y_train, y_test = train_test_split(
+    x, y, test_size=0.3, shuffle=True)
 
-# #create list of model and accuracy dicts
-# perform_list = [ ]
-
-# def run_model(model_name, est_c, est_pnlty):
-    
-#     mdl= ""
+# create list of model and accuracy dicts
+perform_list = []
 
 
-#     if model_name == 'Random Forest':
+def run_model(model_name, est_c, est_pnlty):
 
-#         mdl = RandomForestClassifier(n_estimators=100 ,criterion='entropy' , random_state=0)
+    mdl = ""
 
-#     elif model_name == 'Multinomial Naive Bayes':
+    if model_name == 'Random Forest':
 
-#         mdl = MultinomialNB(alpha=1.0,fit_prior=True)
+        mdl = RandomForestClassifier(n_estimators=100, criterion='entropy')
 
-#     elif model_name == 'Support Vector Classifer':
+    elif model_name == 'Multinomial Naive Bayes':
 
-#         mdl = SVC()
+        mdl = MultinomialNB(alpha=1.0, fit_prior=True)
 
-#     elif model_name == 'Decision Tree Classifier':
+    elif model_name == 'Support Vector Classifer':
 
-#         mdl = DecisionTreeClassifier()
+        mdl = SVC()
 
-#     elif model_name == 'K Nearest Neighbour':
+    elif model_name == 'Decision Tree Classifier':
 
-#         mdl = KNeighborsClassifier(n_neighbors=10 , metric= 'minkowski' , p = 4)
-    
-#     elif model_name == 'BernoulliNB' :
-        
-#         mdl = BernoulliNB()
+        mdl = DecisionTreeClassifier()
 
-    
+    elif model_name == 'K Nearest Neighbour':
 
-#     oneVsRest = OneVsRestClassifier(mdl)
+        mdl = KNeighborsClassifier(n_neighbors=10, metric='minkowski', p=4)
 
-#     oneVsRest.fit(x_train, y_train)
+    elif model_name == 'BernoulliNB':
 
-#     y_pred = oneVsRest.predict(x_test)
+        mdl = BernoulliNB()
 
-#     # Performance metrics
+    oneVsRest = OneVsRestClassifier(mdl)
 
-#     accuracy = round(accuracy_score(y_test, y_pred) * 100, 2)
+    oneVsRest.fit(x_train, y_train)
 
-#     # Get precision, recall, f1 scores
+    y_pred = oneVsRest.predict(x_test)
 
-#     precision, recall, f1score, support = score(y_test, y_pred, average='micro')
+    # Performance metrics
 
-#     print(f'Test Accuracy Score of Basic {model_name}: {accuracy} %')
+    accuracy = round(accuracy_score(y_test, y_pred) * 100, 2)
 
-#     print(f'Precision : {precision}')
+    # Get precision, recall, f1 scores
 
-#     print(f'Recall : {recall}')
+    precision, recall, f1score, support = score(
+        y_test, y_pred, average='micro')
 
-#     print(f'F1-score : {f1score}')
+    print(f'Test Accuracy Score of Basic {model_name}: {accuracy} %')
 
-#     # Add performance parameters to list
+    print(f'Precision : {precision}')
 
-#     perform_list.append(dict([
+    print(f'Recall : {recall}')
 
-#     ('Model', model_name),
+    print(f'F1-score : {f1score}')
 
-#     ('Test Accuracy', round(accuracy, 2)),
+    # Add performance parameters to list
 
-#     ('Precision', round(precision, 2)),
+    perform_list.append(dict([
 
-#     ('Recall', round(recall, 2)),
+        ('Model', model_name),
 
-#     ('F1', round(f1score, 2))
+        ('Test Accuracy', round(accuracy, 2)),
 
-#     ]))
+        ('Precision', round(precision, 2)),
 
-# # run_model('BernoulliNB', est_c=None, est_pnlty=None)
+        ('Recall', round(recall, 2)),
 
-# # run_model('Multinomial Naive Bayes', est_c=None, est_pnlty=None)
+        ('F1', round(f1score, 2))
 
-# # run_model('Support Vector Classifer', est_c=None, est_pnlty=None)
-# #run_model('K Nearest Neighbour', est_c=None, est_pnlty=None)
+    ]))
 
-# # run_model('Decision Tree Classifier', est_c=None, est_pnlty=None)
+run_model('BernoulliNB', est_c=None, est_pnlty=None)
+
+# run_model('Multinomial Naive Bayes', est_c=None, est_pnlty=None)
+
+# run_model('Support Vector Classifer', est_c=None, est_pnlty=None)
+#run_model('K Nearest Neighbour', est_c=None, est_pnlty=None)
+
+# run_model('Decision Tree Classifier', est_c=None, est_pnlty=None)
+
 
 # run_model('Random Forest', est_c=None, est_pnlty=None)
 
-# model_performance = pd.DataFrame(data=perform_list)
-# model_performance = model_performance[['Model', 'Test Accuracy', 'Precision', 'Recall', 'F1']]
-# model_performance
-# model = model_performance["Model"]
-# max_value = model_performance["Test Accuracy"].max()
+model_performance = pd.DataFrame(data=perform_list)
+model_performance = model_performance[[
+    'Model', 'Test Accuracy', 'Precision', 'Recall', 'F1']]
+model_performance
+model = model_performance["Model"]
+max_value = model_performance["Test Accuracy"].max()
 # print("The best accuracy of model is", max_value, "%")
 
-# classifier = RandomForestClassifier(n_estimators=100 ,criterion='entropy' , random_state=0).fit(x_train, y_train)
+classifier = RandomForestClassifier(
+    n_estimators=100, criterion='entropy', random_state=0).fit(x_train, y_train)
 # y_pred1 = cv.transform(['nigga got no chill', 'wassup bitches'])
 
 
 @app.route("/", methods=["GET", "POST"])
-
 def login():
     msg = ''
     if request.method == 'POST' and 'EMAIL' in request.form and 'PASSWORD' in request.form:
@@ -222,7 +222,7 @@ def login():
         PASSWORD = request.form['PASSWORD']
         PASSWORD = hashlib.md5(PASSWORD.encode())
         PASSWORD = PASSWORD.hexdigest()
-        print(PASSWORD)
+       
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         query = 'SELECT * FROM USER WHERE EMAIL = % s AND PASSWORD = % s'
         cursor.execute(query, (EMAIL, PASSWORD,))
@@ -239,7 +239,7 @@ def login():
             cursor.execute(query, (LOGIN_COUNT, LAST_LOGIN, account['UID'],))
 
             mysql.connection.commit()
-            
+
             return render_template('home.html')
         else:
             msg = 'Incorrect username / password !'
@@ -250,14 +250,12 @@ def login():
 # http://localhost:5000/logout - this will be the logout page
 
 
-
 @app.route('/logout')
 def logout():
     session.pop('loggedin', None)
     session.pop('UID', None)
     session.pop('NAME', None)
     return redirect(url_for('login'))
-
 
 
 # http://localhost:5000/register - this will be the registration page, we need to use both GET and POST requests
@@ -297,9 +295,11 @@ def register():
     elif request.method == 'POST':
         msg = 'Please fill out the form ! '
 
-    return render_template('register.html', msg= msg)
+    return render_template('register.html', msg=msg)
 
 # http://localhost:5000/home - this will be the home page, only accessible for loggedin users
+
+
 @app.route("/home")
 def home():
     # Check if user is loggedin
@@ -317,8 +317,8 @@ def profile():
     if "loggedin" in session:
         # We need all the account info for the user so we can display it on the profile page
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        
-        query  = 'SELECT * FROM USER WHERE UID = % s'
+
+        query = 'SELECT * FROM USER WHERE UID = % s'
         cursor.execute(query, (session['UID'],))
         account = cursor.fetchone()
         # Show the profile page with account info
@@ -334,97 +334,94 @@ def my_form():
 
 @app.route("/home", methods=["POST"])
 def my_form_post():
-    # train = pd.read_csv(
-    #     "D:\Programming\BE PROJECT\datasets\\bullying_dataset.csv", error_bad_lines=False
-    # )
-    # train.drop_duplicates(keep=False, inplace=True)
 
-    
-    # twitter_name = str(request.form["text"])
+    search_query = str(request.form["text"])
 
+    # update the record
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
+    cursor.execute(query, (session['UID'], search_query))
+    mysql.connection.commit()
+    c = twint.Config()
 
-    # c = twint.Config()
-    
-    # c.Search = twitter_name.split(" ")
-    
-    # c.Lang = "en"
+    c.Search = search_query.split(" ")
 
-    # c.Min_likes = 100
+    c.Lang = "en"
 
-    # c.Limit = 500
+    c.Min_likes = 100
+
+    c.Limit = 250
 
     # c.Near = "India"
 
-    # c.Store_csv = True  # store tweets in a csv file
-    
-    # c.Output = os.getcwd() + twitter_name + ".csv"  # path to csv file
-    
-    # asyncio.set_event_loop(asyncio.new_event_loop())
-    
-    # twint.run.Search(c)
-    
-    # test = pd.read_csv(
-    #     os.getcwd() + twitter_name + ".csv", error_bad_lines=False
-    # )
+    c.Store_csv = True  # store tweets in a csv file
 
-    
+    c.Output = os.getcwd() + search_query + ".csv"  # path to csv file
+
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
+    twint.run.Search(c)
+
+    test = pd.read_csv(
+        os.getcwd() + search_query + ".csv", error_bad_lines=False
+    )
+
     # data preprocessing
     # test['tweet'] = test['tweet'].apply(convert_lower)
-    
+
     # test['tweet'] = test['tweet'].apply(remove_stopwords)
 
     # test['tweet'] = test['tweet'].apply(lemmatize_word)
 
-    
-    # tweets = test['tweet'].head().values
+    tweets = test['tweet'][:20].values
 
-    # prediction = cv.transform(tweets)
+    prediction = cv.transform(tweets)
 
-    # prediction = classifier.predict(prediction)
-    
-    # print(prediction)
+    prediction = classifier.predict(prediction)
 
-    # result = []
-    
-    # for i in prediction : 
+    print(prediction)
 
-    #     result.append(i)
+    result = []
+
+    for i in prediction:
+
+        result.append(i)
 
     # print(result)
-    return render_template('home.html')
-    # return render_template(
-    #     "home.html",
-        # twitter_name = twitter_name,
-        # Tweets = tweets,
-        # result = result
-    # )
+    # return render_template('home.html')
+
+    return render_template(
+        "home.html",
+        search_query=search_query,
+        Tweets=tweets,
+        result=result
+    )
 
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
-        
+
         # Get the file from post request
         f = request.files["file"]
 
         # Save the file to ./uploads
-        
+
         basepath = os.getcwd()
-        
-        file_path = os.path.join(basepath, "uploads", secure_filename(f.filename))
+
+        file_path = os.path.join(
+            basepath, "uploads", secure_filename(f.filename))
         f.save(file_path)
-       
+
         # reader = easyocr.Reader(['en'], gpu = False)
         # img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
-        
-        
-        
+
         text = " "
-        
+
         # text = text.join(img_txt)
 
         # text_transformed = cv.transform([text])
-        
+
         # result = classifier.predict(text_transformed)
 
         # return render_template("image.html", Text = text, result = result)
@@ -432,7 +429,7 @@ def upload():
 
 @app.route("/image")
 def image():
-     # Check if user is loggedin
+    # Check if user is loggedin
     if "loggedin" in session:
         # User is loggedin show them the home page
         return render_template("image.html")
@@ -440,43 +437,60 @@ def image():
     return redirect(url_for("login"))
 
 
-@app.route('/send_report', methods = ['GET','POST'])
+@app.route('/send_report', methods=['GET', 'POST'])
 def send_report():
-    twitter_name = request.form['twitter_name']
+    search_query = request.form['search_query']
     index = int(request.form['i'])
     test = pd.read_csv(
-         os.getcwd() + twitter_name + ".csv", error_bad_lines=False
-     )
-    # test = pd.read_csv("D:\Programming\BE PROJECT\scraped_tweets\slut.csv")
+        os.getcwd() + search_query + ".csv", error_bad_lines=False
+    )
 
     tweet_id = test['id'][index]
     tweet_username = test['username'][index]
     tweet_owner = test['name'][index]
     tweet = test['tweet'][index]
-    return render_template('send_report.html', tweet_id = tweet_id, tweet_username = tweet_username, tweet_owner= tweet_owner, tweet = tweet)
+
+    
+
+    # update the record
+    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+    query = 'INSERT INTO USER_LOGS(UID, TWITTER_USERNAME, TWEET) VALUE(% s, % s, % s)'
+    cursor.execute(query, (session['UID'], tweet_username, tweet))
+    mysql.connection.commit()
+    
+    return render_template('send_report.html', tweet_id=tweet_id, tweet_username=tweet_username, tweet_owner=tweet_owner, tweet=tweet)
 
 
-
-
-@app.route('/success', methods = ['GET','POST'])
+@app.route('/success', methods=['GET', 'POST'])
 def success():
     try:
         with app.app_context():
             msg = Message(
-                subject= request.form['subject'],
+                subject=request.form['subject'],
                 sender=app.config.get("MAIL_USERNAME"),
                 recipients=[request.form['email']],
-                body= request.form['msg'])
-            
+                body=request.form['msg'])
+
         mail.send(msg)
+
+        # find the record
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        query = 'SELECT REPORT_COUNT FROM USER WHERE UID = % s'
+        cursor = cursor.execute(query, (session['UID']))
+        account = cursor.fetchone()
+
+        # update the record
+        query = 'UPDATE USER SET REPORT_COUNT = % s WHERE UID = % s'
+        report_count = account['REPORT_COUNT'] + 1
+        cursor.execute(query, (report_count, session['UID']))
+        mysql.connection.commit()
+
         return render_template('success.html')
 
     except Exception as e:
         print(e)
-        return render_template('success.html', error = e)
-
-    
+        return render_template('success.html', error=e)
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port = 5000)
+    app.run(debug=True, port=5000)
