@@ -379,14 +379,31 @@ def my_form_post():
 
     prediction = classifier.predict(prediction)
 
-    print(prediction)
+    
 
     result = []
+    label = []
 
     for i in prediction:
 
+        if i == 'none':
+            label.append(0)
+        elif i == 'racism':
+            label.append(1)
+        elif i == 'sexism' :
+            label.append(2)
+        else :
+            label.append(3)
+        
         result.append(i)
 
+    bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
+    bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
+    plt.xlabel("Category of data")
+    plt.xticks(rotation='horizontal')
+    plt.ylabel('Number of tweets')
+    plt.title("Visualize numbers of Category of data")
+    plt.savefig("static\graphs\\" + search_query + ".png", bbox_inches='tight')
     # print(result)
     # return render_template('home.html')
 
