@@ -189,7 +189,7 @@ def run_model(model_name, est_c, est_pnlty):
 
     ]))
 
-run_model('BernoulliNB', est_c=None, est_pnlty=None)
+# run_model('BernoulliNB', est_c=None, est_pnlty=None)
 
 # run_model('Multinomial Naive Bayes', est_c=None, est_pnlty=None)
 
@@ -199,7 +199,7 @@ run_model('BernoulliNB', est_c=None, est_pnlty=None)
 # run_model('Decision Tree Classifier', est_c=None, est_pnlty=None)
 
 
-# run_model('Random Forest', est_c=None, est_pnlty=None)
+run_model('Random Forest', est_c=None, est_pnlty=None)
 
 model_performance = pd.DataFrame(data=perform_list)
 model_performance = model_performance[[
@@ -356,8 +356,9 @@ def my_form_post():
 
     c.Store_csv = True  # store tweets in a csv file
 
-    c.Output = os.getcwd() + search_query + ".csv"  # path to csv file
+    c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
 
+    print(os.getcwd() + search_query + ".csv")
     asyncio.set_event_loop(asyncio.new_event_loop())
 
     twint.run.Search(c)
@@ -366,14 +367,25 @@ def my_form_post():
         os.getcwd() + search_query + ".csv", error_bad_lines=False
     )
 
-    # data preprocessing
-    # test['tweet'] = test['tweet'].apply(convert_lower)
+    
 
-    # test['tweet'] = test['tweet'].apply(remove_stopwords)
+    def preprocess(input_txt):
+    
+        try:
+        
+            if detect(input_txt) == 'en'  and (len(p.clean(input_txt)) > 3):
+                return p.clean(input_txt)
+        
+        except Exception as e:
+            pass
+    
+    # clean the tweets and remove non-english tweets
 
-    # test['tweet'] = test['tweet'].apply(lemmatize_word)
-
-    tweets = test['tweet'][:20].values
+    test['tweet'] = np.vectorize(preprocess)(test['tweet'])
+    test['tweet'] = test['tweet'].replace('None', np.nan)
+    test = test.dropna(subset=['tweet'], how ='all')
+    
+    tweets = test['tweet'][:15].values
 
     prediction = cv.transform(tweets)
 
@@ -459,7 +471,7 @@ def send_report():
     search_query = request.form['search_query']
     index = int(request.form['i'])
     test = pd.read_csv(
-        os.getcwd() + search_query + ".csv", error_bad_lines=False
+        os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", error_bad_lines=False
     )
 
     tweet_id = test['id'][index]
