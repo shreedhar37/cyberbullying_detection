@@ -335,97 +335,110 @@ def my_form():
 @app.route("/home", methods=["POST"])
 def my_form_post():
 
-    search_query = str(request.form["text"])
+    try:
+        search_query = str(request.form["text"])
 
-    # update the record
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
-    cursor.execute(query, (session['UID'], search_query))
-    mysql.connection.commit()
-    c = twint.Config()
+        # update the record
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
+        cursor.execute(query, (session['UID'], search_query))
+        mysql.connection.commit()
+        c = twint.Config()
 
-    c.Search = search_query.split(" ")
+        c.Search = search_query.split(" ")
 
-    c.Lang = "en"
+        c.Lang = "en"
 
-    c.Min_likes = 100
+        c.Min_likes = 100
 
-    c.Limit = 250
+        c.Limit = 250
 
-    # c.Near = "India"
+        # c.Near = "India"
 
-    c.Store_csv = True  # store tweets in a csv file
+        c.Store_csv = True  # store tweets in a csv file
 
-    c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
+        c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
 
-    print(os.getcwd() + search_query + ".csv")
-    asyncio.set_event_loop(asyncio.new_event_loop())
+        # print(os.getcwd() + search_query + ".csv")
+        # asyncio.set_event_loop(asyncio.new_event_loop())
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        twint.run.Search(c)
 
-    twint.run.Search(c)
+        test = pd.read_csv(
+            os.getcwd() + search_query + ".csv", error_bad_lines=False
+        )
 
-    test = pd.read_csv(
-        os.getcwd() + search_query + ".csv", error_bad_lines=False
-    )
-
-    
-
-    def preprocess(input_txt):
-    
-        try:
         
-            if detect(input_txt) == 'en'  and (len(p.clean(input_txt)) > 3):
-                return p.clean(input_txt)
+
+        def preprocess(input_txt):
         
-        except Exception as e:
-            pass
-    
-    # clean the tweets and remove non-english tweets
-
-    test['tweet'] = np.vectorize(preprocess)(test['tweet'])
-    test['tweet'] = test['tweet'].replace('None', np.nan)
-    test = test.dropna(subset=['tweet'], how ='all')
-    
-    tweets = test['tweet'][:15].values
-
-    prediction = cv.transform(tweets)
-
-    prediction = classifier.predict(prediction)
-
-    
-
-    result = []
-    label = []
-
-    for i in prediction:
-
-        if i == 'none':
-            label.append(0)
-        elif i == 'racism':
-            label.append(1)
-        elif i == 'sexism' :
-            label.append(2)
-        else :
-            label.append(3)
+            try:
+            
+                if detect(input_txt) == 'en'  and (len(p.clean(input_txt)) > 3):
+                    return p.clean(input_txt)
+            
+            except Exception as e:
+                pass
         
-        result.append(i)
+        # clean the tweets and remove non-english tweets
 
-    bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
-    bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
-    plt.xlabel("Category of data")
-    plt.xticks(rotation='horizontal')
-    plt.ylabel('Number of tweets')
-    plt.title("Visualize numbers of Category of data")
-    plt.savefig("static\graphs\\" + search_query + ".png", bbox_inches='tight')
-    # print(result)
-    # return render_template('home.html')
+        test['tweet'] = np.vectorize(preprocess)(test['tweet'])
+        test['tweet'] = test['tweet'].replace('None', np.nan)
+        test = test.dropna(subset=['tweet'], how ='all')
+        test = test.reset_index()
+        
+        tweets = test['tweet'][:15].values
 
+        prediction = cv.transform(tweets)
+
+        prediction = classifier.predict(prediction)
+
+        
+
+        result = []
+        label = []
+
+        for i in prediction:
+
+            if i == 'none':
+                label.append(0)
+            elif i == 'racism':
+                label.append(1)
+            elif i == 'sexism' :
+                label.append(2)
+            else :
+                label.append(3)
+            
+            result.append(i)
+
+        bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
+        bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
+        plt.xlabel("Category of data")
+        plt.xticks(rotation='horizontal')
+        plt.ylabel('Number of tweets')
+        plt.title("Visualize numbers of Category of data")
+        plt.savefig("static\graphs\\" + search_query + ".png", bbox_inches='tight')
+        # print(result)
+        # return render_template('home.html')
+
+        return render_template(
+            "home.html",
+            search_query=search_query,
+            Tweets=tweets,
+            result=result
+        )
+
+    except FileNotFoundError:
+        msg = 'found 0 tweets in this search'
+    
+    except Exception as e:
+        msg = e
+        
+    
     return render_template(
-        "home.html",
-        search_query=search_query,
-        Tweets=tweets,
-        result=result
-    )
-
+            'home.html',
+             msg = msg
+        )
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
@@ -522,4 +535,4 @@ def success():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
