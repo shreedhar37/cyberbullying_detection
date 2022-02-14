@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 import nltk
+from sympy import E
 import twint
 from nltk.corpus import stopwords
 # nltk.download('stopwords')
@@ -87,36 +88,39 @@ mysql = MySQL(app)
 
 @app.route("/", methods=["GET", "POST"])
 def login():
-    msg = ''
-    if request.method == 'POST' and 'EMAIL' in request.form and 'PASSWORD' in request.form:
-        EMAIL = request.form['EMAIL']
-        PASSWORD = request.form['PASSWORD']
-        PASSWORD = hashlib.md5(PASSWORD.encode())
-        PASSWORD = PASSWORD.hexdigest()
-       
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        query = 'SELECT * FROM USER WHERE EMAIL = % s AND PASSWORD = % s'
-        cursor.execute(query, (EMAIL, PASSWORD,))
-        account = cursor.fetchone()
-        if account:
-            session['loggedin'] = True
-            session['UID'] = account['UID']
-            session['NAME'] = account['NAME']
-            LOGIN_COUNT = account['LOGIN_COUNT'] + 1
-            LAST_LOGIN = dt.datetime.now()
+    try:
+        msg = ''
+        if request.method == 'POST' and 'EMAIL' in request.form and 'PASSWORD' in request.form:
+            EMAIL = request.form['EMAIL']
+            PASSWORD = request.form['PASSWORD']
+            PASSWORD = hashlib.md5(PASSWORD.encode())
+            PASSWORD = PASSWORD.hexdigest()
+        
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            query = 'SELECT * FROM USER WHERE EMAIL = % s AND PASSWORD = % s'
+            cursor.execute(query, (EMAIL, PASSWORD,))
+            account = cursor.fetchone()
+            if account:
+                session['loggedin'] = True
+                session['UID'] = account['UID']
+                session['NAME'] = account['NAME']
+                LOGIN_COUNT = account['LOGIN_COUNT'] + 1
+                LAST_LOGIN = dt.datetime.now()
 
-            query = 'UPDATE USER SET LOGIN_COUNT = % s, LAST_LOGIN = % s WHERE UID = % s'
+                query = 'UPDATE USER SET LOGIN_COUNT = % s, LAST_LOGIN = % s WHERE UID = % s'
 
-            cursor.execute(query, (LOGIN_COUNT, LAST_LOGIN, account['UID'],))
+                cursor.execute(query, (LOGIN_COUNT, LAST_LOGIN, account['UID'],))
 
-            mysql.connection.commit()
+                mysql.connection.commit()
 
-            return render_template('home.html')
-        else:
-            msg = 'Incorrect username / password !'
+                return render_template('home.html')
+            else:
+                msg = 'Incorrect username / password !'
 
-    return render_template('index.html', msg=msg)
+        return render_template('index.html', msg=msg)
 
+    except Exception as e:
+        return render_template('index.html', msg = e)
 
 # http://localhost:5000/logout - this will be the logout page
 
@@ -134,39 +138,43 @@ def logout():
 # http://localhost:5000/register - this will be the registration page, we need to use both GET and POST requests
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    msg = ''
-    if request.method == 'POST' and 'NAME' in request.form and 'EMAIL' in request.form and 'PASSWORD' in request.form and 'CPASSWORD' in request.form:
-        NAME = request.form['NAME']
-        EMAIL = request.form['EMAIL']
-        PASSWORD = request.form['PASSWORD']
-        CPASSWORD = request.form['CPASSWORD']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        query = 'SELECT EMAIL FROM USER WHERE EMAIL = % s'
-        cursor.execute(query, (EMAIL, ))
-        account = cursor.fetchone()
-        if account:
-            msg = 'Account already exists !'
-        elif not re.match(r'[^@]+@[^@]+\.[^@]+', EMAIL):
-            msg = 'Invalid email address !'
+    try:
+        msg = ''
+        if request.method == 'POST' and 'NAME' in request.form and 'EMAIL' in request.form and 'PASSWORD' in request.form and 'CPASSWORD' in request.form:
+            NAME = request.form['NAME']
+            EMAIL = request.form['EMAIL']
+            PASSWORD = request.form['PASSWORD']
+            CPASSWORD = request.form['CPASSWORD']
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            query = 'SELECT EMAIL FROM USER WHERE EMAIL = % s'
+            cursor.execute(query, (EMAIL, ))
+            account = cursor.fetchone()
+            if account:
+                msg = 'Account already exists !'
+            elif not re.match(r'[^@]+@[^@]+\.[^@]+', EMAIL):
+                msg = 'Invalid email address !'
 
-        elif not NAME or not EMAIL or not PASSWORD or not CPASSWORD:
-            msg = 'Please fill out the form !'
-        elif PASSWORD != CPASSWORD:
-            msg = "Confirm Password doesn't match with password !!"
+            elif not NAME or not EMAIL or not PASSWORD or not CPASSWORD:
+                msg = 'Please fill out the form !'
+            elif PASSWORD != CPASSWORD:
+                msg = "Confirm Password doesn't match with password !!"
 
-        else:
-            PASSWORD = hashlib.md5(PASSWORD.encode())
-            PASSWORD = PASSWORD.hexdigest()
-            query = 'INSERT INTO USER(NAME, EMAIL, PASSWORD) VALUES(%s, %s, %s)'
-            cursor.execute(query, (NAME, EMAIL, PASSWORD,))
-            mysql.connection.commit()
-            msg = 'You have successfully registered ! Please Login with your credentials'
-            return render_template('index.html', msg=msg)
+            else:
+                PASSWORD = hashlib.md5(PASSWORD.encode())
+                PASSWORD = PASSWORD.hexdigest()
+                query = 'INSERT INTO USER(NAME, EMAIL, PASSWORD) VALUES(%s, %s, %s)'
+                cursor.execute(query, (NAME, EMAIL, PASSWORD,))
+                mysql.connection.commit()
+                msg = 'You have successfully registered ! Please Login with your credentials'
+                return render_template('index.html', msg=msg)
 
-    elif request.method == 'POST':
-        msg = 'Please fill out the form ! '
+        elif request.method == 'POST':
+            msg = 'Please fill out the form ! '
 
-    return render_template('register.html', msg=msg)
+        return render_template('register.html', msg = msg)
+    
+    except Exception as e:
+        return render_template('register.html', msg = e)
 
 # http://localhost:5000/home - this will be the home page, only accessible for loggedin users
 
@@ -231,13 +239,15 @@ def my_form_post():
         c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
 
         asyncio.set_event_loop(asyncio.new_event_loop())
+        
         twint.run.Search(c)
+        
 
         test = pd.read_csv(
-            os.getcwd() + search_query + ".csv", error_bad_lines=False
+            os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", 
+            error_bad_lines=False
         )
 
-        
 
         def preprocess(input_txt):
         
@@ -318,31 +328,36 @@ def my_form_post():
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
-    if request.method == "POST":
+    try:
 
-        # Get the file from post request
-        f = request.files["file"]
+        if request.method == "POST":
 
-        # Save the file to ./uploads
+            # Get the file from post request
+            f = request.files["file"]
 
-        basepath = os.getcwd()
+            # Save the file to ./uploads
 
-        file_path = os.path.join(
-            basepath, "uploads", secure_filename(f.filename))
-        f.save(file_path)
+            basepath = os.getcwd()
 
-        # reader = easyocr.Reader(['en'], gpu = False)
-        # img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
+            file_path = os.path.join(
+                basepath, "uploads", secure_filename(f.filename))
+            f.save(file_path)
 
-        text = " "
+            # reader = easyocr.Reader(['en'], gpu = False)
+            # img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
 
-        # text = text.join(img_txt)
+            text = " "
 
-        # text_transformed = cv.transform([text])
+            # text = text.join(img_txt)
 
-        # result = classifier.predict(text_transformed)
+            # text_transformed = cv.transform([text])
 
-        # return render_template("image.html", Text = text, result = result)
+            # result = classifier.predict(text_transformed)
+
+            # return render_template("image.html", Text = text, result = result)
+        
+    except Exception as e:
+        return render_template('image.html', msg = e)
 
 
 @app.route("/image")
@@ -357,27 +372,31 @@ def image():
 
 @app.route('/send_report', methods=['GET', 'POST'])
 def send_report():
-    search_query = request.form['search_query']
-    index = int(request.form['i'])
-    test = pd.read_csv(
-        os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", error_bad_lines=False
-    )
+    try:
 
-    tweet_id = test['id'][index]
-    tweet_username = test['username'][index]
-    tweet_owner = test['name'][index]
-    tweet = test['tweet'][index]
+        search_query = request.form['search_query']
+        index = int(request.form['i'])
+        test = pd.read_csv(
+            os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", error_bad_lines=False
+        )
 
-    
+        tweet_id = test['id'][index]
+        tweet_username = test['username'][index]
+        tweet_owner = test['name'][index]
+        tweet = test['tweet'][index]
 
-    # update the record
-    cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-    query = 'INSERT INTO USER_LOGS(UID, TWITTER_USERNAME, TWEET) VALUE(% s, % s, % s)'
-    cursor.execute(query, (session['UID'], tweet_username, tweet))
-    mysql.connection.commit()
-    
-    return render_template('send_report.html', tweet_id=tweet_id, tweet_username=tweet_username, tweet_owner=tweet_owner, tweet=tweet)
+        
 
+        # update the record
+        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        query = 'INSERT INTO USER_LOGS(UID, TWITTER_USERNAME, TWEET) VALUE(% s, % s, % s)'
+        cursor.execute(query, (session['UID'], tweet_username, tweet))
+        mysql.connection.commit()
+        
+        return render_template('send_report.html', tweet_id=tweet_id, tweet_username=tweet_username, tweet_owner=tweet_owner, tweet=tweet)
+
+    except Exception as e:
+        return render_template('send_report.html', msg = e)
 
 @app.route('/success', methods=['GET', 'POST'])
 def success():

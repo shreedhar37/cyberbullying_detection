@@ -7,6 +7,9 @@
 <div class="container">
 
 
+  <strong> {{msg}}</strong>
+  <br>
+  <br>
 
   <form action="{{ url_for('success')}}" method='POST'>
     <label for="branch-select" class="mt-3 mb-3">Choose your Cybercrime Branch: </label>
@@ -28,7 +31,8 @@
 
     <div class="mt-3 mb-3">
       <label for="subject" class="form-label">Email Subject:</label>
-      <input type="text" class="form-control" id="subject" name="subject" placeholder="Twitter Cyberbullying" maxlength = "50">
+      <input type="text" class="form-control" id="subject" name="subject" placeholder="Twitter Cyberbullying"
+        maxlength="50">
     </div>
 
     <div class="mt-3 mb-3">
