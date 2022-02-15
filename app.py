@@ -266,7 +266,7 @@ def my_form_post():
         test = test.dropna(subset=['tweet'], how ='all')
         test = test.reset_index()
         
-        tweet = test['tweet'][:15].values
+        tweet = test['tweet'].values
 
         loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
         
@@ -276,7 +276,7 @@ def my_form_post():
 
         prediction = loaded_model.predict(tweets)
 
-        # print(type(prediction))
+       
         result = []
 
         label = []
@@ -294,24 +294,22 @@ def my_form_post():
             
             result.append(i)
         
-        # print(result)
-        # print(label)
+       
 
         bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
         bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
-        plt.xlabel("Category of data")
+        plt.xlabel("Category of tweet")
         plt.xticks(rotation='horizontal')
         plt.ylabel('Number of tweets')
-        plt.title("Visualize numbers of Category of data")
-        plt.savefig("static\graphs\\" + search_query + ".png", bbox_inches='tight')
-        # print(result)
-        # return render_template('home.html')
+        plt.title("Visualize numbers of Category of tweets")
+        plt.savefig("static\graphs\\" + search_query + "_.png", bbox_inches='tight')
+       
 
         return render_template(
             "home.html",
             search_query=search_query,
             Tweets=tweet,
-            result=result
+            result=result[:20]
         )
 
     except FileNotFoundError:
