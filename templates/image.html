@@ -13,7 +13,7 @@
         <input type="submit" class="mt-3 btn btn-primary rounded-pill" value="upload">
     </form>
 
-    
+
 
     {% if request.method == "POST" %}
 
@@ -30,49 +30,35 @@
             </tr>
         </thead>
         <tbody>
-                <tr>
-                    <td scope="row">1</td>
-                    <td>{{Text}}</td>
-                    <td>
-                        {% if result == 'none' %}
+            <tr>
+                <td scope="row">1</td>
+                <td>{{Text}}</td>
+                <td>
+                    {% if result == 'none' %}
 
-                         Non Bullying Tweet 
+                    Non Bullying Tweet
 
-                        {% elif result == 'racism' %}
+                    {% elif result == 'racism' %}
 
-                        <button class='btn btn-danger' disabled> Racism </button>
-                        
-                       
-
-                        {% elif result == 'sexism' %}
-
-                        <button class='btn btn-danger' disabled> Sexism Tweet </button>
+                    <button class='btn btn-danger' disabled> Racism </button>
 
 
-                        {% else %}
 
-                        <button class='btn btn-danger'>Other hate speech tweet</button>
+                    {% elif result == 'sexism' %}
 
-                        {% endif %}
+                    <button class='btn btn-danger' disabled> Sexism Tweet </button>
 
-                    </td>
 
-                    <!-- <td> -->
-                        <!-- {% if ( result == 'racism'  or  result == 'sexism'   or  result == 'other' ) %} -->
+                    {% else %}
 
-                        <!-- <form action="{{ url_for('send_report') }}" method='POST'>
-                            <input type="hidden" id="twitter_name" name="twitter_name" value="{{twitter_name}}">
-                            <input type="hidden" id="i" name="i" value="{{i}}">
-                            <input type="submit" class="btn btn-danger" value='Report'>
+                    <button class='btn btn-danger'>Other hate speech tweet</button>
 
-                        </form> -->
+                    {% endif %}
 
-               
+                </td>
 
-                        <!-- {% endif %} -->
-                    <!-- </td> -->
-                </tr>
-               
+            </tr>
+
         </tbody>
     </table>
 

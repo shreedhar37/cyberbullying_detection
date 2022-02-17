@@ -14,41 +14,45 @@
 
         <div class="mt-3">
             <label for="text" class="form-label">Enter the name of the person : </label><br><br>
-            <input type="text" class="form-control rounded-pill" id="text" name="text" placeholder="Salman Khan" maxlength="30"
-                required><br>
+            <input type="text" class="form-control rounded-pill" id="text" name="text" placeholder="Salman Khan"
+                maxlength="30" required><br>
         </div>
         <button id='search' type="submit" class="mt-3 btn btn-primary rounded-pill"
-            onclick="loading('visible')">Search and show the results</button>
+            onclick="loading('visible', true)">Search and show the results</button>
 
     </form>
     <br><br><br>
 
     <!-- Show the loading animation   -->
-    <div id='loader' class='loader' style="visibility:hidden"></div>
+
+    <img id='loader' class="img-fluid" style="visibility:hidden" src="static/images/loading-load.gif" alt="loading gif">
+
     <br>
 
     <!-- Exception Handling -->
-    <strong onload="loading('hidden')">{{msg}}</strong>
+    <strong onload="loading('hidden', false)">{{msg}}</strong>
 
     {% if request.method == "POST" and result %}
-    <img src="static\graphs\\{{search_query}}_.png" onload="loading('hidden')">
+    <img src="static\graphs\\{{search_query}}_.png" onload="loading('hidden', false)" class='img-fluid'
+        alt="graph describing number of tweets vs category of tweets">
     <br>
     <br>
     <br>
     <br>
-    <h3>Top 20 tweets prediction:</h3>
+    <h3>Result:</h3>
     <br>
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th scope="col">SNo</th>
-                <th scope="col">Tweet</th>
-                <th scope="col">Prediction</th>
-                <th scope="col">Report</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for i in range(result|length) %}
+    <div class="table-responsive">
+        <table class="table overflow-auto">
+            <thead class="thead-dark">
+                <tr>
+                    <th scope="col">SNo</th>
+                    <th scope="col">Tweet</th>
+                    <th scope="col">Prediction</th>
+                    <th scope="col">Report</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(result|length) %}
                 <tr>
                     <td scope="row">{{i + 1}}</td>
                     <td>{{Tweets[i]}}</td>
@@ -87,10 +91,9 @@
                     </td>
                 </tr>
                 {% endfor %}
-        </tbody>
-    </table>
-
-
+            </tbody>
+        </table>
+    </div>
 
 
     {% endif %}
@@ -100,11 +103,5 @@
 
 
 </div>
-<!-- <script>
-    function loading(value) {
-        console.log("Loading has been called!!")
-        document.getElementById('loader').style.visibility = value;
-    }
-</script> -->
 
 {% endblock %}

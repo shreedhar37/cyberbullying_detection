@@ -55,8 +55,8 @@ mail_settings = {
     "MAIL_PORT": 465,
     "MAIL_USE_TLS": False,
     "MAIL_USE_SSL": True,
-    "MAIL_USERNAME": '',
-    "MAIL_PASSWORD": ''
+    "MAIL_USERNAME": 'shdharchavan@gmail.com',
+    "MAIL_PASSWORD": 'P@ssword@!2018'
 }
 
 app.config.update(mail_settings)
@@ -309,7 +309,7 @@ def my_form_post():
             "home.html",
             search_query=search_query,
             Tweets=tweet,
-            result=result[:20]
+            result=result
         )
 
     except FileNotFoundError:
@@ -338,7 +338,7 @@ def upload():
             basepath = os.getcwd()
 
             file_path = os.path.join(
-                basepath, "uploads", secure_filename(f.filename))
+                basepath, "/static/uploads", secure_filename(f.filename))
             f.save(file_path)
 
             # reader = easyocr.Reader(['en'], gpu = False)
@@ -428,4 +428,4 @@ def success():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
