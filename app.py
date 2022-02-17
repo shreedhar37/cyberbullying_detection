@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 import nltk
-from sympy import E
 import twint
 from nltk.corpus import stopwords
 # nltk.download('stopwords')
