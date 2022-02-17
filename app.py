@@ -21,13 +21,6 @@ from nltk.tokenize import sent_tokenize
 # nltk.download('punkt')
 from wordcloud import WordCloud
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import classification_report
-from sklearn.metrics import make_scorer, roc_curve, roc_auc_score
-from sklearn.metrics import precision_recall_fscore_support as score
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -48,6 +41,7 @@ from flask_mail import Mail, Message
 import datetime as dt
 import joblib
 from asyncio import new_event_loop, set_event_loop
+from wordcloud import WordCloud
 
 app = Flask(__name__)
 mail_settings = {
@@ -55,8 +49,8 @@ mail_settings = {
     "MAIL_PORT": 465,
     "MAIL_USE_TLS": False,
     "MAIL_USE_SSL": True,
-    "MAIL_USERNAME": 'shdharchavan@gmail.com',
-    "MAIL_PASSWORD": 'P@ssword@!2018'
+    "MAIL_USERNAME": '',
+    "MAIL_PASSWORD": ''
 }
 
 app.config.update(mail_settings)
@@ -295,6 +289,7 @@ def my_form_post():
             result.append(i)
         
        
+        # visualization 
 
         bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
         bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
@@ -304,6 +299,14 @@ def my_form_post():
         plt.title("Visualize numbers of Category of tweets")
         plt.savefig("static\graphs\\" + search_query + "_.png", bbox_inches='tight')
        
+       # wordcloud
+
+        all_words = ' '.join([text for text in test['tweet']])
+
+        wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110, background_color='white').generate(all_words)
+        wordcloud.to_file("static\wordclouds\\" + search_query + "_.png")
+
+
 
         return render_template(
             "home.html",

@@ -29,75 +29,85 @@
 
     <br>
 
-    <!-- Exception Handling -->
-    <strong onload="loading('hidden', false)">{{msg}}</strong>
+    <div class="result">
+        <!-- Exception Handling -->
+        <strong onload="loading('hidden', false)">{{msg}}</strong>
+        {% if request.method == "POST" and result %}
+        <div class="images">
+            <img src="static/graphs//{{search_query}}_.png" onload="loading('hidden', false)" class='img-fluid'
+                alt="graph describing number of tweets vs category of tweets">
 
-    {% if request.method == "POST" and result %}
-    <img src="static\graphs\\{{search_query}}_.png" onload="loading('hidden', false)" class='img-fluid'
-        alt="graph describing number of tweets vs category of tweets">
-    <br>
-    <br>
-    <br>
-    <br>
-    <h3>Result:</h3>
-    <br>
-    <div class="table-responsive">
-        <table class="table overflow-auto">
-            <thead class="thead-dark">
-                <tr>
-                    <th scope="col">SNo</th>
-                    <th scope="col">Tweet</th>
-                    <th scope="col">Prediction</th>
-                    <th scope="col">Report</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for i in range(result|length) %}
-                <tr>
-                    <td scope="row">{{i + 1}}</td>
-                    <td>{{Tweets[i]}}</td>
-                    <td>
-                        {% if result[i] == 'none' %}
+            <figure>
+                <img src="static/wordclouds\\{{search_query}}_.png" class="img-fluid" id='wordcloud'
+                    alt="image showing frequently used words in tweet" />
+                <strong>
+                    <figcaption style="text-align: center; margin-top:2rem">frequently used words in tweet</figcaption>
+                </strong>
+            </figure>
+        </div>
+        <br>
+        <br>
+        <br>
+        <br>
+        <h3>Result:</h3>
+        <br>
+        <div class="table-responsive">
+            <table class="table overflow-auto">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col">SNo</th>
+                        <th scope="col">Tweet</th>
+                        <th scope="col">Prediction</th>
+                        <th scope="col">Report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in range(result|length) %}
+                    <tr>
+                        <td scope="row">{{i + 1}}</td>
+                        <td>{{Tweets[i]}}</td>
+                        <td>
+                            {% if result[i] == 'none' %}
 
-                        Non Bullying Tweet
+                            Non Bullying Tweet
 
-                        {% elif result[i] == 'racism' %}
+                            {% elif result[i] == 'racism' %}
 
-                        Racism Tweet
+                            Racism Tweet
 
-                        {% elif result[i] == 'sexism' %}
+                            {% elif result[i] == 'sexism' %}
 
-                        Sexism Tweet
+                            Sexism Tweet
 
-                        {% else %}
+                            {% else %}
 
-                        Other hate speech tweet
+                            Other hate speech tweet
 
-                        {% endif %}
+                            {% endif %}
 
-                    </td>
+                        </td>
 
-                    <td>
-                        {% if ( result[i] == 'racism'  or  result[i] == 'sexism'   or  result[i] == 'other' ) %}
+                        <td>
+                            {% if ( result[i] == 'racism'  or  result[i] == 'sexism'   or  result[i] == 'other' ) %}
 
-                        <form action="{{ url_for('send_report') }}" method='POST'>
-                            <input type="hidden" id="search_query" name="search_query" value="{{search_query}}">
-                            <input type="hidden" id="i" name="i" value="{{i}}">
-                            <input type="submit" class="btn btn-danger rounded-pill" value='Report'>
+                            <form action="{{ url_for('send_report') }}" method='POST'>
+                                <input type="hidden" id="search_query" name="search_query" value="{{search_query}}">
+                                <input type="hidden" id="i" name="i" value="{{i}}">
+                                <input type="submit" class="btn btn-danger rounded-pill" value='Report'>
 
-                        </form>
+                            </form>
 
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        {% endif %}
     </div>
-
-
-    {% endif %}
-
     <br><br>
 
 

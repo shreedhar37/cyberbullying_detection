@@ -24,3 +24,11 @@
 ::-webkit-scrollbar-thumb:hover {
   background: grey; 
 }
+
+.images{
+  display: flex;
+}
+
+.figure{
+  margin-left: 2rem;
+}
