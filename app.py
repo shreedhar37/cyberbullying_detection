@@ -269,7 +269,7 @@ def my_form_post():
         
         loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
         
-        tweets = loaded_vectorizer.transform(test['tweet'].values)
+        tweets = loaded_vectorizer.transform(test['cleaned_tweets'])
 
         prediction = loaded_model.predict(tweets)
 
