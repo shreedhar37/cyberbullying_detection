@@ -256,20 +256,23 @@ def my_form_post():
         print("Length before preprocessing : ", len(test.tweet))
         
         test['cleaned_tweets'] = np.vectorize(preprocess)(test['tweet'])
-        na_index = test[test['cleaned_tweets'] == 'None'].index
-        test.drop(test.index[na_index], inplace = True)
-        
+        test ['cleaned_tweets'] = test['cleaned_tweets'].replace('None', np.nan)
+        test = test.dropna(subset= ['cleaned_tweets'], how='all')
+        test = test.reset_index()
+    
        
-        
+        test.drop_duplicates(subset=['cleaned_tweets'], inplace = True)
+    
+
         print("Length after preprocessing : ", len(test.tweet))
-        
-        test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", index = False)
+        test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
         
         loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
         
         loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
         
-        tweets = loaded_vectorizer.transform(test['cleaned_tweets'])
+        tweets = loaded_vectorizer.transform(test['cleaned_tweets'].values)
+
 
         prediction = loaded_model.predict(tweets)
 
@@ -290,7 +293,6 @@ def my_form_post():
                 label.append(3)
             
             result.append(i)
-        
        
         # visualization 
 
@@ -314,7 +316,7 @@ def my_form_post():
         return render_template(
             "home.html",
             search_query=search_query,
-            Tweets=test['tweet'].values,
+            Tweets=test.tweet.values,
             result=result
         )
 
