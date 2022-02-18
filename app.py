@@ -253,19 +253,23 @@ def my_form_post():
                 pass
         
         # clean the tweets and remove non-english tweets
-
-        test['tweet'] = np.vectorize(preprocess)(test['tweet'])
-        test['tweet'] = test['tweet'].replace('None', np.nan)
-        test = test.dropna(subset=['tweet'], how ='all')
-        test = test.reset_index()
+        print("Length before preprocessing : ", len(test.tweet))
         
-        tweet = test['tweet'].values
-
+        test['cleaned_tweets'] = np.vectorize(preprocess)(test['tweet'])
+        na_index = test[test['cleaned_tweets'] == 'None'].index
+        test.drop(test.index[na_index], inplace = True)
+        
+       
+        
+        print("Length after preprocessing : ", len(test.tweet))
+        
+        test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", index = False)
+        
         loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
         
         loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
         
-        tweets = loaded_vectorizer.transform(tweet)
+        tweets = loaded_vectorizer.transform(test['tweet'].values)
 
         prediction = loaded_model.predict(tweets)
 
@@ -310,7 +314,7 @@ def my_form_post():
         return render_template(
             "home.html",
             search_query=search_query,
-            Tweets=tweet,
+            Tweets=test['tweet'].values,
             result=result
         )
 
