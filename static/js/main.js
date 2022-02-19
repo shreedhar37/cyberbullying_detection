@@ -13,3 +13,9 @@ function loading(visibility, hidden_value) {
 
 }
 
+function imgLoading(visibility){
+    console.log("Loading has been called!!")
+
+    document.getElementById('img-loader').style.visibility = visibility;
+
+}
