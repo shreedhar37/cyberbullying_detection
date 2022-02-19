@@ -8,7 +8,27 @@
 <div class="container">
     <br>
     <br>
-    <div class="alert alert-success" role="alert"> Hello {{ session['NAME'] }} </div><br>
+    <div class="alert alert-success" role="alert"> Hello {{ session['NAME'] }} </div><br><br>
+    
+    <!-- Email success message-->
+    
+    {% if success %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>{{success}}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <br><br>
+    {% endif %}
+    
+    <!-- Exception Handling -->
+    
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" onload="loading('hidden', false)">
+        <strong>{{error}}</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <br><br>
+    {% endif %}
 
     <form action="{{ url_for('home') }}" method="POST">
 
@@ -31,7 +51,7 @@
 
     <div id="result">
         <!-- Exception Handling -->
-        <strong onload="loading('hidden', false)">{{msg}}</strong>
+        <!-- <strong class="alert alert-success" onload="loading('hidden', false)">{{msg}}</strong> -->
         {% if request.method == "POST" and result %}
         <div class="images">
             <img src="static/graphs//{{search_query}}_.png" onload="loading('hidden', false)" class='img-fluid'
@@ -93,6 +113,7 @@
                             <form action="{{ url_for('send_report') }}" method='POST'>
                                 <input type="hidden" id="search_query" name="search_query" value="{{search_query}}">
                                 <input type="hidden" id="i" name="i" value="{{i}}">
+                                <input type="hidden" id="result[i]" name="result[i]" value="{{result[i]}}">
                                 <input type="submit" class="btn btn-danger rounded-pill" value='Report'>
 
                             </form>

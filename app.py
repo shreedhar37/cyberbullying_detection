@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+from wsgiref.util import request_uri
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
@@ -207,163 +208,175 @@ def my_form():
 @app.route("/home", methods=["POST"])
 def my_form_post():
 
-    try:
-        search_query = str(request.form["text"])
+    if "loggedin" in session:
 
-        # update the record
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
-        cursor.execute(query, (session['UID'], search_query))
-        mysql.connection.commit()
-        c = twint.Config()
+        try:
+            search_query = str(request.form["text"])
 
-        c.Search = search_query.split(" ")
+            # update the record
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
+            cursor.execute(query, (session['UID'], search_query))
+            mysql.connection.commit()
+            c = twint.Config()
 
-        c.Lang = "en"
+            c.Search = search_query.split(" ")
 
-        c.Min_likes = 100
+            c.Lang = "en"
 
-        c.Limit = 100
+            c.Min_likes = 100
 
-        # c.Near = "India"
+            c.Limit = 100
 
-        c.Store_csv = True  # store tweets in a csv file
+            # c.Near = "India"
 
-        c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
+            c.Store_csv = True  # store tweets in a csv file
 
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        
-        twint.run.Search(c)
-        
+            c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
 
-        test = pd.read_csv(
-            os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", 
-            error_bad_lines=False
-        )
-
-
-        def preprocess(input_txt):
-        
-            try:
+            asyncio.set_event_loop(asyncio.new_event_loop())
             
-                if detect(input_txt) == 'en'  and (len(p.clean(input_txt)) > 3):
-                    return p.clean(input_txt)
+            twint.run.Search(c)
             
-            except Exception as e:
-                pass
-        
-        # clean the tweets and remove non-english tweets
-        print("Length before preprocessing : ", len(test.tweet))
-        
-        test['cleaned_tweets'] = np.vectorize(preprocess)(test['tweet'])
-        test ['cleaned_tweets'] = test['cleaned_tweets'].replace('None', np.nan)
-        test = test.dropna(subset= ['cleaned_tweets'], how='all')
-        test = test.reset_index()
-    
-       
-        test.drop_duplicates(subset=['cleaned_tweets'], inplace = True)
-    
 
-        print("Length after preprocessing : ", len(test.tweet))
-        test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
-        
-        loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
-        
-        loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
-        
-        tweets = loaded_vectorizer.transform(test['cleaned_tweets'].values)
+            test = pd.read_csv(
+                os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", 
+                error_bad_lines=False
+            )
 
 
-        prediction = loaded_model.predict(tweets)
-
-       
-        result = []
-
-        label = []
-
-        for i in prediction:
-
-            if i == 'none':
-                label.append(0)
-            elif i == 'racism':
-                label.append(1)
-            elif i == 'sexism' :
-                label.append(2)
-            else :
-                label.append(3)
+            def preprocess(input_txt):
             
-            result.append(i)
-       
-        # visualization 
+                try:
+                
+                    if detect(input_txt) == 'en'  and (len(p.clean(input_txt)) > 3):
+                        return p.clean(input_txt)
+                
+                except Exception as e:
+                    pass
+            
+            # clean the tweets and remove non-english tweets
+            print("Length before preprocessing : ", len(test.tweet))
+            
+            test['cleaned_tweets'] = np.vectorize(preprocess)(test['tweet'])
+            test ['cleaned_tweets'] = test['cleaned_tweets'].replace('None', np.nan)
+            test = test.dropna(subset= ['cleaned_tweets'], how='all')
+            test = test.reset_index(drop=True)
+        
+        
+            test.drop_duplicates(subset=['cleaned_tweets'], inplace = True)
+        
 
-        bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
-        bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
-        plt.xlabel("Category of tweet")
-        plt.xticks(rotation='horizontal')
-        plt.ylabel('Number of tweets')
-        plt.title("Visualize numbers of Category of tweets")
-        plt.savefig("static\graphs\\" + search_query + "_.png", bbox_inches='tight')
-       
-       # wordcloud
-
-        all_words = ' '.join([text for text in test['tweet']])
-
-        wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110, background_color='white').generate(all_words)
-        wordcloud.to_file("static\wordclouds\\" + search_query + "_.png")
+            print("Length after preprocessing : ", len(test.tweet))
+            test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
+            
+            loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
+            
+            loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
+            
+            tweets = loaded_vectorizer.transform(test['cleaned_tweets'].values)
 
 
+            prediction = loaded_model.predict(tweets)
 
+        
+            result = []
+
+            label = []
+
+            for i in prediction:
+
+                if i == 'none':
+                    label.append(0)
+                elif i == 'racism':
+                    label.append(1)
+                elif i == 'sexism' :
+                    label.append(2)
+                else :
+                    label.append(3)
+                
+                result.append(i)
+        
+            # visualization 
+
+            bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
+            bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
+            plt.xlabel("Category of tweet")
+            plt.xticks(rotation='horizontal')
+            plt.ylabel('Number of tweets')
+            plt.title("Visualize numbers of Category of tweets")
+            plt.savefig("static\graphs\\" + search_query + "_.png", bbox_inches='tight')
+        
+        # wordcloud
+
+            all_words = ' '.join([text for text in test['tweet']])
+
+            wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110, background_color='white').generate(all_words)
+            wordcloud.to_file("static\wordclouds\\" + search_query + "_.png")
+
+
+
+            return render_template(
+                "home.html",
+                search_query=search_query,
+                Tweets=test.tweet.values,
+                result=result
+            )
+
+        except FileNotFoundError:
+            error = 'found 0 tweets in this search'
+        
+        except Exception as e:
+            error = e
+            
+        
         return render_template(
-            "home.html",
-            search_query=search_query,
-            Tweets=test.tweet.values,
-            result=result
-        )
+                'home.html',
+                error = error
+            )
 
-    except FileNotFoundError:
-        msg = 'found 0 tweets in this search'
-    
-    except Exception as e:
-        msg = e
-        
-    
-    return render_template(
-            'home.html',
-             msg = msg
-        )
+    else:
+        return redirect(url_for("login"))
+         
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
-    try:
-
-        if request.method == "POST":
-
-            # Get the file from post request
-            f = request.files["file"]
-
-            # Save the file to ./uploads
-
-            basepath = os.getcwd()
-
-            file_path = os.path.join(
-                basepath, "/static/uploads", secure_filename(f.filename))
-            f.save(file_path)
-
-            # reader = easyocr.Reader(['en'], gpu = False)
-            # img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
-
-            text = " "
-
-            # text = text.join(img_txt)
-
-            # text_transformed = cv.transform([text])
-
-            # result = classifier.predict(text_transformed)
-
-            # return render_template("image.html", Text = text, result = result)
+    if "loggedin" in session:
         
-    except Exception as e:
-        return render_template('image.html', msg = e)
+        try:
+
+            if request.method == "POST":
+
+                # Get the file from post request
+                f = request.files["file"]
+
+                # Save the file to ./uploads
+
+                basepath = os.getcwd()
+
+                file_path = os.path.join(
+                    basepath, "/static/uploads", secure_filename(f.filename))
+                f.save(file_path)
+
+                # reader = easyocr.Reader(['en'], gpu = False)
+                # img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
+
+                text = " "
+
+                # text = text.join(img_txt)
+
+                # text_transformed = cv.transform([text])
+
+                # result = classifier.predict(text_transformed)
+
+                # return render_template("image.html", Text = text, result = result)
+            
+        except Exception as e:
+            return render_template('image.html', msg = e)
+    
+    else:
+        return redirect(url_for("login"))
+        
 
 
 @app.route("/image")
@@ -378,62 +391,78 @@ def image():
 
 @app.route('/send_report', methods=['GET', 'POST'])
 def send_report():
-    try:
+    if "loggedin" in session:
+        try:
 
-        search_query = request.form['search_query']
-        index = int(request.form['i'])
-        test = pd.read_csv(
-            os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", error_bad_lines=False
-        )
+            search_query = request.form['search_query']
+            index = int(request.form['i'])
+            test = pd.read_csv(
+                os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", error_bad_lines=False
+            )
 
-        tweet_id = test['id'][index]
-        tweet_username = test['username'][index]
-        tweet_owner = test['name'][index]
-        tweet = test['tweet'][index]
+            tweet_id = test['id'][index]
+            tweet_username = test['username'][index]
+            tweet_owner = test['name'][index]
+            tweet = test['tweet'][index]
+            tweet_category = request.form['result[i]']
+            
 
-        
+            
+            
+            return render_template('send_report.html', 
+                                    tweet_id=tweet_id, 
+                                    tweet_username=tweet_username, 
+                                    tweet_owner=tweet_owner, 
+                                    tweet=tweet, 
+                                    tweet_category = tweet_category
+                                    )
 
-        # update the record
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        query = 'INSERT INTO USER_LOGS(UID, TWITTER_USERNAME, TWEET) VALUE(% s, % s, % s)'
-        cursor.execute(query, (session['UID'], tweet_username, tweet))
-        mysql.connection.commit()
-        
-        return render_template('send_report.html', tweet_id=tweet_id, tweet_username=tweet_username, tweet_owner=tweet_owner, tweet=tweet)
+        except Exception as e:
+            return render_template('send_report.html', msg = e)
+    
+    else:
+        return redirect(url_for("login"))
 
-    except Exception as e:
-        return render_template('send_report.html', msg = e)
 
 @app.route('/success', methods=['GET', 'POST'])
 def success():
-    try:
-        with app.app_context():
-            msg = Message(
-                subject=request.form['subject'],
-                sender=app.config.get("MAIL_USERNAME"),
-                recipients=[request.form['email']],
-                body=request.form['msg'])
+    if "loggedin" in session:
+        try:
+            with app.app_context():
+                msg = Message(
+                    subject= "Twitter Cyberbullying",
+                    sender=app.config.get("MAIL_USERNAME"),
+                    recipients=[request.form['email']],
+                    body=request.form['msg'])
 
-        mail.send(msg)
+            mail.send(msg)
 
-        # find the record
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        query = 'SELECT REPORT_COUNT FROM USER WHERE UID = % s'
-        cursor = cursor.execute(query, (session['UID']))
-        account = cursor.fetchone()
+            # find the record
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            query = 'SELECT REPORT_COUNT FROM USER WHERE UID = %s'
+            cursor.execute(query, (session['UID'],))
+            account = cursor.fetchone()
 
-        # update the record
-        query = 'UPDATE USER SET REPORT_COUNT = % s WHERE UID = % s'
-        report_count = account['REPORT_COUNT'] + 1
-        cursor.execute(query, (report_count, session['UID']))
-        mysql.connection.commit()
+            # update the record
+            query = 'UPDATE USER SET REPORT_COUNT = %s WHERE UID = %s'
+            cursor.execute(query, (account['REPORT_COUNT'] + 1, session['UID']))
+            
+            query = 'INSERT INTO USER_LOGS(UID, TWITTER_USERNAME, TWEET) VALUE(% s, % s, % s)'
+            tweet_username = request.form['tweet_username']
+            tweet = request.form['tweet']
+            cursor.execute(query, (session['UID'], tweet_username, tweet))
+            
+            mysql.connection.commit()
 
-        return render_template('success.html')
+            msg = 'Your report has been sent to Cybercrime Branch. Thank you for reporting!!'
+            return render_template('home.html', success = msg)
 
-    except Exception as e:
-        print(e)
-        return render_template('success.html', error=e)
+        except Exception as e:
+            print(e)
+            return render_template('home.html', error=e)
 
+    else:
+        return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(debug=False, port=5000)
