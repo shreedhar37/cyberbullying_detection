@@ -31,10 +31,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.feature_extraction.text import CountVectorizer
 import os
-from PIL import Image
-import easyocr
+# from PIL import Image
+# import easyocr
 from werkzeug.utils import secure_filename
-import torchvision
+# import torchvision
 import preprocessor as p
 from langdetect import detect
 from flask_mail import Mail, Message
@@ -270,11 +270,26 @@ def my_form_post():
             print("Length after preprocessing : ", len(test.tweet))
             test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
             
+            # NLP Techniques
+            lemmatizer = WordNetLemmatizer()
+            tweets = []
+            for i in test['cleaned_tweets']:
+                tweets.append(i)
+            
+            corpus = []
+            for i in range(len(tweets)):
+                tweet = re.sub('[^a-zA-Z]', ' ', tweets[i])
+                tweet = tweet.lower()
+                tweet = tweet.split()
+                tweet = [lemmatizer.lemmatize(word) for word in tweet if word not in stopwords.words('english')]
+                tweet = " ".join(tweet)
+                corpus.append(tweet)
+            
             loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
             
             loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
             
-            tweets = loaded_vectorizer.transform(test['cleaned_tweets'].values)
+            tweets = loaded_vectorizer.transform(corpus)
 
 
             prediction = loaded_model.predict(tweets)
@@ -339,49 +354,49 @@ def my_form_post():
         return redirect(url_for("login"))
          
 
-@app.route("/upload", methods=["GET", "POST"])
-def upload():
-    if "loggedin" in session:
+# @app.route("/upload", methods=["GET", "POST"])
+# def upload():
+#     if "loggedin" in session:
         
-        try:
+#         try:
 
-            if request.method == "POST":
+#             if request.method == "POST":
 
-                # Get the file from post request
-                f = request.files["file"]
+#                 # Get the file from post request
+#                 f = request.files["file"]
 
-                # Save the file to ./uploads
+#                 # Save the file to ./uploads
 
                
 
-                file_path = os.path.join(
-                    os.getcwd() , "/Programming/BE PROJECT/cyberbullying_detection/static/uploads//", secure_filename(f.filename))
+#                 file_path = os.path.join(
+#                     os.getcwd() , "/Programming/BE PROJECT/cyberbullying_detection/static/uploads//", secure_filename(f.filename))
                 
-                f.save(file_path)
+#                 f.save(file_path)
 
-                reader = easyocr.Reader(['en'], gpu = False)
-                img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
+#                 reader = easyocr.Reader(['en'], gpu = False)
+#                 img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
 
-                text = " "
+#                 text = " "
 
-                text = text.join(img_txt)
+#                 text = text.join(img_txt)
                 
-                loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
+#                 loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
             
                 
-                loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
+#                 loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
                 
-                text_transformed = loaded_vectorizer.transform([text])
+#                 text_transformed = loaded_vectorizer.transform([text])
 
-                result = loaded_model.predict(text_transformed)
+#                 result = loaded_model.predict(text_transformed)
 
-                return render_template("image.html", Text = text, result = result)
+#                 return render_template("image.html", Text = text, result = result)
             
-        except Exception as e:
-            return render_template('image.html', msg = e)
+#         except Exception as e:
+#             return render_template('image.html', msg = e)
     
-    else:
-        return redirect(url_for("login"))
+#     else:
+#         return redirect(url_for("login"))
         
 
 
@@ -408,7 +423,6 @@ def send_report():
 
             tweet_id = test['id'][index]
             tweet_username = test['username'][index]
-            tweet_owner = test['name'][index]
             tweet = test['tweet'][index]
             tweet_category = request.form['result[i]']
             
@@ -417,8 +431,7 @@ def send_report():
             
             return render_template('send_report.html', 
                                     tweet_id=tweet_id, 
-                                    tweet_username=tweet_username, 
-                                    tweet_owner=tweet_owner, 
+                                    tweet_username=tweet_username,  
                                     tweet=tweet, 
                                     tweet_category = tweet_category
                                     )
