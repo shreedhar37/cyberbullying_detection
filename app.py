@@ -421,18 +421,14 @@ def send_report():
                 os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", error_bad_lines=False
             )
 
-            tweet_id = test['id'][index]
-            tweet_username = test['username'][index]
-            tweet = test['tweet'][index]
+            tweet_link = test['link'][index]
             tweet_category = request.form['result[i]']
             
 
             
             
             return render_template('send_report.html', 
-                                    tweet_id=tweet_id, 
-                                    tweet_username=tweet_username,  
-                                    tweet=tweet, 
+                                    tweet_link= tweet_link,    
                                     tweet_category = tweet_category
                                     )
 
@@ -466,10 +462,10 @@ def success():
             query = 'UPDATE USER SET REPORT_COUNT = %s WHERE UID = %s'
             cursor.execute(query, (account['REPORT_COUNT'] + 1, session['UID']))
             
-            query = 'INSERT INTO USER_LOGS(UID, TWITTER_USERNAME, TWEET) VALUE(% s, % s, % s)'
-            tweet_username = request.form['tweet_username']
-            tweet = request.form['tweet']
-            cursor.execute(query, (session['UID'], tweet_username, tweet))
+            query = 'INSERT INTO USER_LOGS(UID, TWEET_LINK, TWEET_CATEGORY) VALUE(% s, % s, % s)'
+            tweet_link = request.form['tweet_link']
+            tweet_category = request.form['tweet_category']
+            cursor.execute(query, (session['UID'], tweet_link, tweet_category))
             
             mysql.connection.commit()
 
