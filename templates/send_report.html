@@ -34,21 +34,16 @@
       <label for="msg" class="mt-3 form-label">Message:</label>
       <pre>
       <textarea class="form-control" id="msg" name='msg' rows="10" placeholder="This is to inform you that..." maxlength="5000">
-        Tweet details:
+    
+        Tweet link : {{tweet_link}}
 
-        tweet id : {{tweet_id}}
-
-        username: {{tweet_username}}
-
-        tweet : {{tweet}}
-
-        tweet category : {{tweet_category}}
+        Tweet category : {{tweet_category}}
       </textarea>
       </pre>
     </div>
 
-    <input type="hidden" id="tweet_username" name="tweet_username" value="{{tweet_username}}">
-    <input type="hidden" id="tweet" name="tweet" value="{{tweet}}">
+    <input type="hidden" id="tweet_link" name="tweet_link" value="{{tweet_link}}">
+    <input type="hidden" id="tweet_category" name="tweet_category" value="{{tweet_category}}"> 
     <input type="submit" class="btn btn-primary rounded-pill" value="Send an email">
 
   </form>
