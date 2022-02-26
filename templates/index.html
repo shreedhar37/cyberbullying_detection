@@ -5,43 +5,28 @@
 
 {% block content %}
 
-<!-- <div class="indexlogin container">
-    <form action="{{ url_for('login') }}" method="post">
-        <div class="mt-3">
-            <label for="username" class="form-label">Username:</label>
-            <input type="text" class="form-control" id="username" name="username" placeholder="steve@gmail.com">
-        </div>
-        <div class="mt-3">
-            <label for="password" class="form-label">Password:</label>
-            <input type="password" class="form-control" id="password" name="password" placeholder="******">
-        </div>
-        <div class="mt-3">{{ msg }}</div>
-        <button type="submit" class="mt-3 btn btn-primary">Login</button>
-    
-    </form>
-    
-    </div> -->
+
 
 <div class="container">
     <div class='mt-3 mb-3'>
 
-        <form action="{{ url_for('login') }}" method="post" >
+        <form action="{{ url_for('login') }}" method="post">
             {% if msg %}
-            <div class="alert alert-success" role="alert"> {{ msg }} </div><br><br>
+            <div class="alert alert-primary" role="alert"> {{ msg }} </div><br><br>
 
             {% endif %}
             <label for="EMAIL" class="form-label">Email :</label>
-            <input id="EMAIL" name="EMAIL" type="email" placeholder="stevejobs@gmail.com" class="form-control rounded-pill"
-                required /><br>
+            <input id="EMAIL" name="EMAIL" type="email" placeholder="stevejobs@gmail.com"
+                class="form-control rounded-pill" required /><br>
 
             <label for="PASSWORD" class="form-label">Password :</label>
-            <input id="PASSWORD" name="PASSWORD" type="password" placeholder="********" class="form-control rounded-pill"
-                required /><br>
+            <input id="PASSWORD" name="PASSWORD" type="password" placeholder="********"
+                class="form-control rounded-pill" required /><br>
             <button type="submit" class="mt-2 btn btn-primary rounded-pill">Login</button><br><br>
+            <h6>Dont't have an account? <a class="bottom" href="{{url_for('register')}}"> Sign Up here</a> </h6>
         </form>
-        </h2>
-        <h6>Dont't have an account? <a class="bottom" href="{{url_for('register')}}"> Sign Up here</a> </h6>
     </div>
 </div>
+
 
 {% endblock %}
