@@ -31,11 +31,9 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.feature_extraction.text import CountVectorizer
 import os
-# from PIL import Image
-# import easyocr
+import easyocr
 from werkzeug.utils import secure_filename
 # import torchvision
-import preprocessor as p
 from langdetect import detect
 from flask_mail import Mail, Message
 import datetime as dt
@@ -49,8 +47,8 @@ mail_settings = {
     "MAIL_PORT": 465,
     "MAIL_USE_TLS": False,
     "MAIL_USE_SSL": True,
-    "MAIL_USERNAME": '',
-    "MAIL_PASSWORD": ''
+    "MAIL_USERNAME": 'shdharchavan@gmail.com',
+    "MAIL_PASSWORD": 'Cyb3r-bullying$#2022'
 }
 
 app.config.update(mail_settings)
@@ -226,7 +224,7 @@ def my_form_post():
 
             c.Min_likes = 100
 
-            c.Limit = 100
+            c.Limit = 500
 
             # c.Near = "India"
 
@@ -249,8 +247,10 @@ def my_form_post():
             
                 try:
                 
-                    if detect(input_txt) == 'en'  and (len(p.clean(input_txt)) > 3):
-                        return p.clean(input_txt)
+                    if detect(input_txt) == 'en':
+                        pattern = "[^@[\w]+]| [a-zA-Z]+"
+                        result = ''.join(re.findall(pattern, input_txt))
+                        return result
                 
                 except Exception as e:
                     pass
@@ -331,6 +331,51 @@ def my_form_post():
 
 
 
+    #         def imgtotext(link):
+        
+    
+    #             reader = easyocr.Reader(['en'], gpu = False)
+    #             result = reader.readtext(link, paragraph='False', detail  = 0)
+    
+    #             corpus = []
+                
+    #             for i in range(len(result)):
+    #                 tweet = re.sub('[^a-zA-Z]', ' ', result[i])
+    #                 tweet = tweet.lower()
+    #                 tweet = tweet.split()
+    #                 tweet = [lemmatizer.lemmatize(word) for word in tweet if word not in stopwords.words('english')]
+    #                 tweet = " ".join(tweet)
+    #                 corpus.append(tweet)
+
+    #             text  = " "
+    #             text = text.join(corpus)
+                
+                
+    #             vectorizer_filename= 'D:\Programming\BE PROJECT\\vectorizer.pkl'
+    #             model_filename  = 'D:\Programming\BE PROJECT\\model.pkl'
+                
+    #             loaded_vectorizer = joblib.load(vectorizer_filename) # load vectorizer
+    #             loaded_model = joblib.load(model_filename) # load model
+
+    #             text_transformed = loaded_vectorizer.transform([text])
+
+    #             print(text)
+    #             return loaded_model.predict(text_transformed)
+
+    #         imgs = []
+    #         imgResult = []
+    #         for i in range(len(test)):
+        
+    #             if len(test['photos'][i]) > 2:
+        
+    #                 print(imgtotext(test['photos'][i][2:-2]))
+    #                 imgs.append(test['photos'][i][2:-2])
+    #                 imgResult.append(imgtotext(test['photos'][i][2:-2]))
+                    
+                        
+
+            
+            
             return render_template(
                 "home.html",
                 search_query=search_query,
@@ -354,49 +399,49 @@ def my_form_post():
         return redirect(url_for("login"))
          
 
-# @app.route("/upload", methods=["GET", "POST"])
-# def upload():
-#     if "loggedin" in session:
+@app.route("/upload", methods=["GET", "POST"])
+def upload():
+    if "loggedin" in session:
         
-#         try:
+        try:
 
-#             if request.method == "POST":
+            if request.method == "POST":
 
-#                 # Get the file from post request
-#                 f = request.files["file"]
+                # Get the file from post request
+                f = request.files["file"]
 
-#                 # Save the file to ./uploads
+                # Save the file to ./uploads
 
                
 
-#                 file_path = os.path.join(
-#                     os.getcwd() , "/Programming/BE PROJECT/cyberbullying_detection/static/uploads//", secure_filename(f.filename))
+                file_path = os.path.join(
+                    os.getcwd() , "/Programming/BE PROJECT/cyberbullying_detection/static/uploads//", secure_filename(f.filename))
                 
-#                 f.save(file_path)
+                f.save(file_path)
 
-#                 reader = easyocr.Reader(['en'], gpu = False)
-#                 img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
+                reader = easyocr.Reader(['en'], gpu = False)
+                img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
 
-#                 text = " "
+                text = " "
 
-#                 text = text.join(img_txt)
+                text = text.join(img_txt)
                 
-#                 loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
+                loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
             
                 
-#                 loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
+                loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
                 
-#                 text_transformed = loaded_vectorizer.transform([text])
+                text_transformed = loaded_vectorizer.transform([text])
 
-#                 result = loaded_model.predict(text_transformed)
+                result = loaded_model.predict(text_transformed)
 
-#                 return render_template("image.html", Text = text, result = result)
+                return render_template("image.html", Text = text, result = result)
             
-#         except Exception as e:
-#             return render_template('image.html', msg = e)
+        except Exception as e:
+            return render_template('image.html', msg = e)
     
-#     else:
-#         return redirect(url_for("login"))
+    else:
+        return redirect(url_for("login"))
         
 
 
