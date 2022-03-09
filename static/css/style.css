@@ -1,13 +1,3 @@
-/* make dark mode  */
-.main-body{
-  color:white; 
-  background-color: black; 
-}
-
-/* make table dark mode */
-table {
-  background-color: white;
-}
 .table-responsive {
   max-height: 250px;
   overflow: auto;
@@ -55,3 +45,4 @@ form {
 .img-fluid {
   margin: 0 auto;
 }
+
