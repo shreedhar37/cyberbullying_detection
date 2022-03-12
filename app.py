@@ -285,9 +285,9 @@ def my_form_post():
                 tweet = " ".join(tweet)
                 corpus.append(tweet)
             
-            loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
+            loaded_model = joblib.load("static\model\\model.pkl")
             
-            loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
+            loaded_vectorizer = joblib.load("static\model\\vectorizer.pkl")
             
             tweets = loaded_vectorizer.transform(corpus)
 
@@ -418,8 +418,8 @@ def imageResult():
                 text = text.join(corpus)
     
     
-                vectorizer_filename= 'D:\Programming\BE PROJECT\\vectorizer.pkl'
-                model_filename  = 'D:\Programming\BE PROJECT\\model.pkl'
+                model_filename  = 'static\model\\model.pkl'
+                vectorizer_filename= 'static\model\\vectorizer.pkl'
     
                 loaded_vectorizer = joblib.load(vectorizer_filename) # load vectorizer
                 loaded_model = joblib.load(model_filename) # load model
