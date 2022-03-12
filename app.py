@@ -47,8 +47,8 @@ mail_settings = {
     "MAIL_PORT": 465,
     "MAIL_USE_TLS": False,
     "MAIL_USE_SSL": True,
-    "MAIL_USERNAME": 'shdharchavan@gmail.com',
-    "MAIL_PASSWORD": 'Cyb3r-bullying$#2022'
+    "MAIL_USERNAME": '',
+    "MAIL_PASSWORD": ''
 }
 
 app.config.update(mail_settings)
@@ -205,7 +205,7 @@ def my_form():
 
 @app.route("/home", methods=["POST"])
 def my_form_post():
-
+    print("inside text predict")
     if "loggedin" in session:
 
         try:
@@ -329,53 +329,8 @@ def my_form_post():
             wordcloud = WordCloud(width=800, height=400, random_state=21, max_font_size=110, background_color='white').generate(all_words)
             wordcloud.to_file("static\wordclouds\\" + search_query + "_.png")
 
-
-
-    #         def imgtotext(link):
-        
-    
-    #             reader = easyocr.Reader(['en'], gpu = False)
-    #             result = reader.readtext(link, paragraph='False', detail  = 0)
-    
-    #             corpus = []
-                
-    #             for i in range(len(result)):
-    #                 tweet = re.sub('[^a-zA-Z]', ' ', result[i])
-    #                 tweet = tweet.lower()
-    #                 tweet = tweet.split()
-    #                 tweet = [lemmatizer.lemmatize(word) for word in tweet if word not in stopwords.words('english')]
-    #                 tweet = " ".join(tweet)
-    #                 corpus.append(tweet)
-
-    #             text  = " "
-    #             text = text.join(corpus)
-                
-                
-    #             vectorizer_filename= 'D:\Programming\BE PROJECT\\vectorizer.pkl'
-    #             model_filename  = 'D:\Programming\BE PROJECT\\model.pkl'
-                
-    #             loaded_vectorizer = joblib.load(vectorizer_filename) # load vectorizer
-    #             loaded_model = joblib.load(model_filename) # load model
-
-    #             text_transformed = loaded_vectorizer.transform([text])
-
-    #             print(text)
-    #             return loaded_model.predict(text_transformed)
-
-    #         imgs = []
-    #         imgResult = []
-    #         for i in range(len(test)):
-        
-    #             if len(test['photos'][i]) > 2:
-        
-    #                 print(imgtotext(test['photos'][i][2:-2]))
-    #                 imgs.append(test['photos'][i][2:-2])
-    #                 imgResult.append(imgtotext(test['photos'][i][2:-2]))
-                    
-                        
-
-            
-            
+         
+         
             return render_template(
                 "home.html",
                 search_query=search_query,
@@ -399,47 +354,120 @@ def my_form_post():
         return redirect(url_for("login"))
          
 
-@app.route("/upload", methods=["GET", "POST"])
-def upload():
+@app.route("/imageResult", methods=["GET", "POST"])
+def imageResult():
     if "loggedin" in session:
-        
+    
         try:
+            search_query = str(request.form["text"])
 
-            if request.method == "POST":
+            # update the record
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
+            cursor.execute(query, (session['UID'], search_query))
+            mysql.connection.commit()
+            c = twint.Config()
 
-                # Get the file from post request
-                f = request.files["file"]
+            c.Search = search_query.split(" ")
 
-                # Save the file to ./uploads
+            c.Lang = "en"
 
-               
+            c.Min_likes = 100
 
-                file_path = os.path.join(
-                    os.getcwd() , "/Programming/BE PROJECT/cyberbullying_detection/static/uploads//", secure_filename(f.filename))
-                
-                f.save(file_path)
+            c.Limit = 10
+
+            # c.Near = "India"
+
+            c.Store_csv = True  # store tweets in a csv file
+
+            c.Output = os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv"  # path to csv file
+
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            
+            twint.run.Search(c)
+            
+
+            test = pd.read_csv(
+                os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", 
+                error_bad_lines=False
+            )
+            
+           
+            
+            def imgtotext(link):
+        
+                 
 
                 reader = easyocr.Reader(['en'], gpu = False)
-                img_txt = reader.readtext(file_path, paragraph="False", detail = 0)
+    
+               
+                result = reader.readtext(link, paragraph='False', detail  = 0)
+    
+                corpus = []
+                lemmatizer = WordNetLemmatizer()
+                
+                for i in range(len(result)):
+                    tweet = re.sub('[^a-zA-Z]', ' ', result[i])
+                    tweet = tweet.lower()
+                    tweet = tweet.split()
+                    tweet = [lemmatizer.lemmatize(word) for word in tweet if word not in stopwords.words('english')]
+                    tweet = " ".join(tweet)
+                    corpus.append(tweet)
 
-                text = " "
+                text  = " "
+                text = text.join(corpus)
+    
+    
+                vectorizer_filename= 'D:\Programming\BE PROJECT\\vectorizer.pkl'
+                model_filename  = 'D:\Programming\BE PROJECT\\model.pkl'
+    
+                loaded_vectorizer = joblib.load(vectorizer_filename) # load vectorizer
+                loaded_model = joblib.load(model_filename) # load model
 
-                text = text.join(img_txt)
-                
-                loaded_model = joblib.load("D:\Programming\BE PROJECT\\model.pkl")
-            
-                
-                loaded_vectorizer = joblib.load("D:\Programming\BE PROJECT\\vectorizer.pkl")
-                
                 text_transformed = loaded_vectorizer.transform([text])
 
-                result = loaded_model.predict(text_transformed)
+                
+                return loaded_model.predict(text_transformed)
 
-                return render_template("image.html", Text = text, result = result)
-            
+              
+            index = []
+            imgLinks = []
+            result = []
+            for i in range(len(test)):
+        
+                if len(test['photos'][i]) > 2:
+                    
+                    text = test['photos'][i]
+                    pattern = "https:[^']+"
+                    links = re.findall(pattern, text)
+                 
+                    if len(links) != 0:
+                        for link in links:
+                            imgLinks.append(link)
+                            index.append(i)
+                            result.append(imgtotext(link))
+
+        
+            return render_template(
+                "image.html",
+                search_query=search_query,
+                index = index,
+                imgLinks = imgLinks,
+                result=result
+            )
+
+
+        except FileNotFoundError:
+            error = 'found 0 tweets in this search'
+        
         except Exception as e:
-            return render_template('image.html', msg = e)
-    
+            error = e
+            
+        
+        return render_template(
+                'image.html',
+                error = error
+            )
     else:
         return redirect(url_for("login"))
         

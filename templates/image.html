@@ -1,11 +1,10 @@
 {% extends 'layout.html' %}
 
-{% block title %}Upload Image{% endblock %}
+{% block title %}Image{% endblock %}
 
 {% block content %}
 
 <div class="container">
-    <h3 class="mt-3 mb-3 text-justify">Detect bullying in text based images</h3>
     <br>
     <br>
 
@@ -16,75 +15,52 @@
     </div>
     {% endif %}
     <br><br>
-    <label class="mt-3">Upload a new image</label>
-
-    <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data" class='mt-3 mb-3'>
-        <input type="file" name="file" class="mt-3 form-control">
-        <input type="submit" class="mt-3 btn btn-primary rounded-pill" value="upload" onclick="imgLoading('visible')">
-    </form>
-
-
-    <!-- Show the loading animation   -->
-
-    <img id='img-loader' class="img-fluid" style="visibility:hidden" src="static/images/loading-load.gif" alt="loading gif">
     
-    {% if request.method == "POST" %}   
+
+    <form action="{{ url_for('imageResult') }}" method="POST">
+        <h3 class="mt-3 mb-3 text-justify">Detect bullying in text based images</h3>
+        <br><br>
+        <div class="mt-3">
+            <label for="text" class="form-label">Enter the keyword : </label><br><br>
+            <input type="text" class="form-control rounded-pill" id="text" name="text" placeholder="nigga"
+                maxlength="30" required><br>
+        </div>
+        <button id='search' type="submit" class="mt-3 btn btn-primary rounded-pill"
+            onclick="loading('visible', true)">Predict</button>
+        <!-- Show the loading animation   -->
+
+        <img id='loader' class="img-fluid" style="visibility:hidden" src="static/images/loading-load.gif"
+            alt="loading gif">
+
+        <br>
+    </form>
+    
+    {% if request.method == "POST" and result %}   
   
-    <h3 onload="imgLoading('hidden')">Result</h3>
-    <br>
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th scope="col">#</th>
-                <th scope="col">Text in image</th>
-                <th scope="col">Prediction</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td scope="row">1</td>
-                <td>{{Text}}</td>
-                <td>
-                    {% if result == 'none' %}
+       
+            
+            <div class="container" style="width: 50%;">
+                <div class="card-group text-center">
+                    <div class="card">
+                    {% for i in range(result|length) %}
+                        <img src="{{imgLinks[i]}}" class="card-img-top" alt="tweet image">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ result[i] }}</h5>
+                            <form action="{{ url_for('send_report') }}" method='POST'>
+                                        <input type="hidden" id="search_query" name="search_query" value="{{search_query}}">
+                                        <input type="hidden" id="i" name="i" value="{{index[i]}}">
+                                        <input type="hidden" id="result[i]" name="result[i]" value="{{result[i]}}">
+                                        <input type="submit" class="btn btn-danger rounded-pill" value='Report'>
 
-                    <p>Non Bullying Tweet</p>
-
-                    {% elif result == 'racism' %}
-                    <p style="color:red">Racism tweet</p>
-                    
-                    <!-- <button class='btn btn-danger' disabled> Racism tweet</button> -->
-
-
-
-                    {% elif result == 'sexism' %}
-
-                    <p style="color: red;">Sexism tweet</p>
-                    
-                    <!-- <button class='btn btn-danger' disabled> Sexism Tweet </button> -->
-
-
-                    {% else %}
-
-                    <p style="color: red;">Other hate speech tweet</p>
-                    
-                    <!-- <button class='btn btn-danger' disabled>Other hate speech tweet</button> -->
-
-                    {% endif %}
-
-                </td>
-
-            </tr>
-
-        </tbody>
-    </table>
-
-
-
-
+                            </form>
+                        </div>
+                    </div>
+                
+                </div>
+            </div>
+        {% endfor %}
     {% endif %}
 
-
 </div>
-
 
 {% endblock %}
