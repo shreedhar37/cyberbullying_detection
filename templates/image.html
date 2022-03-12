@@ -34,16 +34,16 @@
 
         <br>
     </form>
+
     
     {% if request.method == "POST" and result %}   
-  
        
-            
-            <div class="container" style="width: 50%;">
+            <div class="container">
                 <div class="card-group text-center">
-                    <div class="card">
                     {% for i in range(result|length) %}
+                    <div class="card">
                         <img src="{{imgLinks[i]}}" class="card-img-top" alt="tweet image">
+                        
                         <div class="card-body">
                             <h5 class="card-title">{{ result[i] }}</h5>
                             <form action="{{ url_for('send_report') }}" method='POST'>
@@ -55,12 +55,12 @@
                             </form>
                         </div>
                     </div>
-                
+                    {% endfor %}
                 </div>
             </div>
-        {% endfor %}
+        
     {% endif %}
 
-</div>
 
+</div>
 {% endblock %}

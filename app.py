@@ -205,7 +205,7 @@ def my_form():
 
 @app.route("/home", methods=["POST"])
 def my_form_post():
-    print("inside text predict")
+ 
     if "loggedin" in session:
 
         try:
@@ -443,9 +443,10 @@ def imageResult():
                  
                     if len(links) != 0:
                         for link in links:
-                            imgLinks.append(link)
-                            index.append(i)
-                            result.append(imgtotext(link))
+                            if imgtotext(link) != 'none':
+                                imgLinks.append(link)
+                                index.append(i)
+                                result.append(imgtotext(link))
 
         
             return render_template(
