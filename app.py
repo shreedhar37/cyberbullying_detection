@@ -277,6 +277,7 @@ def my_form_post():
                 tweets.append(i)
             
             corpus = []
+            
             for i in range(len(tweets)):
                 tweet = re.sub('[^a-zA-Z]', ' ', tweets[i])
                 tweet = tweet.lower()
@@ -289,31 +290,86 @@ def my_form_post():
             
             loaded_vectorizer = joblib.load("static\model\\vectorizer.pkl")
             
-            tweets = loaded_vectorizer.transform(corpus)
+            # tweets = loaded_vectorizer.transform(corpus)
 
 
-            prediction = loaded_model.predict(tweets)
+            # prediction = loaded_model.predict(tweets)
 
-        
             result = []
-
             label = []
+            
+            for i in range(len(test)):
+                    
+                text_transformed =  loaded_vectorizer.transform([corpus[i]])
+                text_result = loaded_model.predict(text_transformed)
 
-            for i in prediction:
+                if text_result[0] != 'none':
+                    print("inside text with index: ",i)
+                    if text_result[0] == 'racism':
+                        
+                        label.append(1)
+                    
+                    if text_result[0] == 'sexism':
+                        label.append(2)
+                    
+                    if text_result[0] == 'other':
+                        label.append(3)
 
-                if i == 'none':
-                    label.append(0)
-                elif i == 'racism':
-                    label.append(1)
-                elif i == 'sexism' :
-                    label.append(2)
-                else :
-                    label.append(3)
+                    result.append(text_result[0])
                 
-                result.append(i)
+            
+                hashtags_result = ['none']
+                hashtags = ""
+                if len(test['hashtags'][i]) > 2:
         
-            # visualization 
+                    text = test['hashtags'][i]
+                    pattern = "[a-zA-Z]+"
+                    hashtags = " ".join(re.findall(pattern, text))
+        
+        
+                    hashtags_transformed = loaded_vectorizer.transform([hashtags])
+                    hashtags_result = loaded_model.predict(hashtags_transformed)
+            
 
+                    if ( text_result[0] == 'none' and hashtags_result[0] != 'none'):
+                        print("inside hashtags with index: ",i)
+                        
+                    
+                        if hashtags_result[0] == 'racism':
+                            label.append(1)
+                        
+                        if hashtags_result[0] == 'sexism':
+                            label.append(2)
+                        
+                        if hashtags_result[0] == 'other':
+                            label.append(3)
+
+                        result.append(hashtags_result[0])
+
+                if (text_result[0] == 'none' and hashtags_result[0] == 'none'):
+                    
+                    result.append(text_result[0])
+                    label.append(0)
+
+        
+            # result = []
+
+            # label = []
+
+            # for i in prediction:
+
+            #     if i == 'none':
+            #         label.append(0)
+            #     elif i == 'racism':
+            #         label.append(1)
+            #     elif i == 'sexism' :
+            #         label.append(2)
+            #     else :
+            #         label.append(3)
+                
+            #     result.append(i)
+            print(len(test['tweet']), len(result), len(label))
+            # visualization 
             bar= pd.DataFrame(list(zip(label, result)),columns =['label', 'category'])
             bar.groupby('category').label.value_counts().plot(kind = "bar", color = ["pink", "orange", "red", "yellow", "blue"])
             plt.xlabel("Category of tweet")
