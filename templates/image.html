@@ -45,7 +45,8 @@
                         <img src="{{imgLinks[i]}}" class="card-img-top" alt="tweet image">
                         
                         <div class="card-body">
-                            <h5 class="card-title">{{ result[i] }}</h5>
+                            <h5 class="card-title">{{ tweets['tweet'][index[i]]}}</h5>
+                            <h5 class="card-title">{{ result[i]}}</h5>
                             <form action="{{ url_for('send_report') }}" method='POST'>
                                         <input type="hidden" id="search_query" name="search_query" value="{{search_query}}">
                                         <input type="hidden" id="i" name="i" value="{{index[i]}}">
@@ -59,6 +60,8 @@
                 </div>
             </div>
         
+    {% elif request.method == 'POST' %}
+            <h5>Not found any offensive image!!</h5>
     {% endif %}
 
 
