@@ -415,13 +415,15 @@ def imageResult():
     if "loggedin" in session:
     
         try:
+            model_filename  = 'static\model\\model.pkl'
+            vectorizer_filename= 'static\model\\vectorizer.pkl'
+            
+            loaded_vectorizer = joblib.load(vectorizer_filename) # load vectorizer
+            loaded_model = joblib.load(model_filename) # load model
+            
             search_query = str(request.form["text"])
-
-            # update the record
-            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
-            cursor.execute(query, (session['UID'], search_query))
-            mysql.connection.commit()
+            
+            
             c = twint.Config()
 
             c.Search = search_query.split(" ")
@@ -430,7 +432,7 @@ def imageResult():
 
             c.Min_likes = 100
 
-            c.Limit = 10
+            c.Limit = 15
 
             # c.Near = "India"
 
@@ -448,7 +450,54 @@ def imageResult():
                 error_bad_lines=False
             )
             
-           
+            def preprocess(input_txt):
+                
+                try:
+                
+                    if detect(input_txt) == 'en':
+                        pattern = "[^@[\w]+]| [a-zA-Z]+"
+                        result = ''.join(re.findall(pattern, input_txt))
+                        return result
+                
+                except Exception as e:
+                    pass
+            
+            # clean the tweets and remove non-english tweets
+            print("Length before preprocessing : ", len(test.tweet))
+            
+            test['cleaned_tweets'] = np.vectorize(preprocess)(test['tweet'])
+            test ['cleaned_tweets'] = test['cleaned_tweets'].replace('None', np.nan)
+            test = test.dropna(subset= ['cleaned_tweets'], how='all')
+            test = test.reset_index(drop=True)
+        
+        
+            test.drop_duplicates(subset=['cleaned_tweets'], inplace = True)
+        
+
+            print("Length after preprocessing : ", len(test.tweet))
+            test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
+            
+            # NLP Techniques
+            lemmatizer = WordNetLemmatizer()
+            tweets = []
+            for i in test['cleaned_tweets']:
+                tweets.append(i)
+            
+            corpus = []
+            
+            for i in range(len(tweets)):
+                tweet = re.sub('[^a-zA-Z]', ' ', tweets[i])
+                tweet = tweet.lower()
+                tweet = tweet.split()
+                tweet = [lemmatizer.lemmatize(word) for word in tweet if word not in stopwords.words('english')]
+                tweet = " ".join(tweet)
+                corpus.append(tweet)
+
+            # update the record
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            query = 'INSERT INTO SEARCH_LOGS(UID, SEARCH_QUERY) VALUE(% s, % s)'
+            cursor.execute(query, (session['UID'], search_query))
+            mysql.connection.commit()
             
             def imgtotext(link):
         
@@ -459,7 +508,7 @@ def imageResult():
                
                 result = reader.readtext(link, paragraph='False', detail  = 0)
     
-                corpus = []
+                img_corpus = []
                 lemmatizer = WordNetLemmatizer()
                 
                 for i in range(len(result)):
@@ -468,49 +517,76 @@ def imageResult():
                     tweet = tweet.split()
                     tweet = [lemmatizer.lemmatize(word) for word in tweet if word not in stopwords.words('english')]
                     tweet = " ".join(tweet)
-                    corpus.append(tweet)
+                    img_corpus.append(tweet)
 
                 text  = " "
-                text = text.join(corpus)
-    
-    
-                model_filename  = 'static\model\\model.pkl'
-                vectorizer_filename= 'static\model\\vectorizer.pkl'
-    
-                loaded_vectorizer = joblib.load(vectorizer_filename) # load vectorizer
-                loaded_model = joblib.load(model_filename) # load model
+                text = text.join(img_corpus)
 
                 text_transformed = loaded_vectorizer.transform([text])
 
                 
                 return loaded_model.predict(text_transformed)
 
-              
+            text_result = ""
+            hashtags_result = ""
+            links = []
             index = []
             imgLinks = []
             result = []
+            
             for i in range(len(test)):
+                
         
                 if len(test['photos'][i]) > 2:
                     
+                    text_transformed =  loaded_vectorizer.transform([corpus[i]])
+                    text_result = loaded_model.predict(text_transformed)
                     text = test['photos'][i]
                     pattern = "https:[^']+"
                     links = re.findall(pattern, text)
-                 
-                    if len(links) != 0:
-                        for link in links:
-                            if imgtotext(link) != 'none':
-                                imgLinks.append(link)
-                                index.append(i)
-                                result.append(imgtotext(link))
-
+            
+                    if text_result == 'none':
+                        text = test['hashtags'][i]
+                        pattern = "\w+"
+                        hashtags = " ".join(re.findall(pattern, text))
+                        print(hashtags)
+                        hashtags_transformed = loaded_vectorizer.transform([hashtags])
+                        hashtags_result = loaded_model.predict(hashtags_transformed)
+                
+               
+                        if hashtags_result == 'none':
+                            if len(links) != 0:
+                                for link in links:
+                                    img_result = imgtotext(link)
+                                    if img_result != 'none':
+                                        imgLinks.append(link)
+                                        index.append(i)
+                                        result.append(img_result)
+                            
+                            
+                        else:
+                            index.append(i)
+                            imgLinks.append(links[0])
+                            result.append(hashtags_result)
+                            print("\nPrediction: ", hashtags_result)
+            
+                    else:
+                        index.append(i)
+                        imgLinks.append(links[0])
+                        result.append(text_result)
+                        print("\nPrediction: ", text_result)
+                    
+                    
+                    
+                   
         
             return render_template(
                 "image.html",
                 search_query=search_query,
                 index = index,
                 imgLinks = imgLinks,
-                result=result
+                result=result,
+                tweets = test
             )
 
 
