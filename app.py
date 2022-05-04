@@ -224,7 +224,7 @@ def my_form_post():
 
             c.Min_likes = 100
 
-            c.Limit = 500
+            c.Limit = 50
 
             # c.Near = "India"
 
@@ -269,7 +269,11 @@ def my_form_post():
 
             print("Length after preprocessing : ", len(test.tweet))
             test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
-            
+            test = pd.read_csv(
+                os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", 
+                error_bad_lines=False
+            )
+
             # NLP Techniques
             lemmatizer = WordNetLemmatizer()
             tweets = []
@@ -304,7 +308,7 @@ def my_form_post():
                 text_result = loaded_model.predict(text_transformed)
 
                 if text_result[0] != 'none':
-                    print("inside text with index: ",i)
+                    # print("inside text with index: ",i)
                     if text_result[0] == 'racism':
                         
                         label.append(1)
@@ -325,16 +329,16 @@ def my_form_post():
                     text = test['hashtags'][i]
                     pattern = "[a-zA-Z]+"
                     hashtags = " ".join(re.findall(pattern, text))
-        
+                    # print(hashtags)
         
                     hashtags_transformed = loaded_vectorizer.transform([hashtags])
                     hashtags_result = loaded_model.predict(hashtags_transformed)
             
 
                     if ( text_result[0] == 'none' and hashtags_result[0] != 'none'):
-                        print("inside hashtags with index: ",i)
+                        # print("inside hashtags with index: ",i)
                         
-                    
+                        print(hashtags_result[0])
                         if hashtags_result[0] == 'racism':
                             label.append(1)
                         
@@ -432,7 +436,7 @@ def imageResult():
 
             c.Min_likes = 100
 
-            c.Limit = 15
+            c.Limit = 10
 
             # c.Near = "India"
 
@@ -476,6 +480,10 @@ def imageResult():
 
             print("Length after preprocessing : ", len(test.tweet))
             test.to_csv(os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv")
+            test = pd.read_csv(
+                os.getcwd() + "\static\scraped_tweets\\" + search_query + ".csv", 
+                error_bad_lines=False
+            )
             
             # NLP Techniques
             lemmatizer = WordNetLemmatizer()
@@ -501,8 +509,6 @@ def imageResult():
             
             def imgtotext(link):
         
-                 
-
                 reader = easyocr.Reader(['en'], gpu = False)
     
                
@@ -521,7 +527,7 @@ def imageResult():
 
                 text  = " "
                 text = text.join(img_corpus)
-
+                # print(text)
                 text_transformed = loaded_vectorizer.transform([text])
 
                 
@@ -541,45 +547,49 @@ def imageResult():
                     
                     text_transformed =  loaded_vectorizer.transform([corpus[i]])
                     text_result = loaded_model.predict(text_transformed)
+                    print("Text result: ",text_result)
                     text = test['photos'][i]
                     pattern = "https:[^']+"
                     links = re.findall(pattern, text)
+                    # print(links)
             
-                    if text_result == 'none':
+                    if (text_result) == 'none':
+                        # print("inside hashtag condition")
                         text = test['hashtags'][i]
                         pattern = "\w+"
                         hashtags = " ".join(re.findall(pattern, text))
-                        print(hashtags)
+                        # print(hashtags)
                         hashtags_transformed = loaded_vectorizer.transform([hashtags])
                         hashtags_result = loaded_model.predict(hashtags_transformed)
-                
+                        # print("Hashtag result: " ,hashtags_result[0])
                
-                        if hashtags_result == 'none':
+                        if hashtags_result[0] == 'none':
+                            print("Inside img condition")
                             if len(links) != 0:
-                                for link in links:
-                                    img_result = imgtotext(link)
-                                    if img_result != 'none':
-                                        imgLinks.append(link)
-                                        index.append(i)
-                                        result.append(img_result)
+                               # for link in links:
+                                img_result = imgtotext(links[0])
+                                print((img_result))
+                                if (img_result) != 'none':
+                                    imgLinks.append(links[0])
+                                    index.append(i)
+                                    result.append(img_result)
                             
                             
                         else:
                             index.append(i)
                             imgLinks.append(links[0])
                             result.append(hashtags_result)
-                            print("\nPrediction: ", hashtags_result)
+                            print("\n hashtag Prediction: ", hashtags_result)
             
                     else:
                         index.append(i)
                         imgLinks.append(links[0])
                         result.append(text_result)
-                        print("\nPrediction: ", text_result)
+                        print("\n text Prediction: ", text_result)
                     
-                    
-                    
-                   
-        
+            print(index)
+            print(result)
+            print(imgLinks)
             return render_template(
                 "image.html",
                 search_query=search_query,

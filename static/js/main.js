@@ -1,6 +1,6 @@
 function retrive() {
     //var branch = document.getElementById("branch-select").value + "crimebranch@gmail.com";
-    var branch = "chavanshrsa18it@student.mes.ac.in"
+    let branch = "chavanshrsa18it@student.mes.ac.in"
     document.getElementById("email").value = branch;
 
 }
